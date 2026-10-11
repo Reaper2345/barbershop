@@ -23,8 +23,19 @@ class HomeController extends Controller
 
         $masters = Master::query()
             ->active()
-            ->with('user')
-            ->withCount('reviews')
+            ->with([
+                'user',
+                /*
+                 * MasterCard's badge renders `master.services.length`, so the
+                 * relation itself has to be loaded. `withCount('services')`
+                 * alone only adds a `services_count` attribute that the card
+                 * does not read, and every home-page card kept showing 0.
+                 */
+                'services' => fn ($query) => $query
+                    ->where('master_service.is_active', true)
+                    ->orderBy('name'),
+            ])
+            ->withCount(['reviews', 'services'])
             ->orderByDesc('rating')
             ->limit(3)
             ->get();
