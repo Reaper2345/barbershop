@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+|--------------------------------------------------------------------------
+| Base
+|--------------------------------------------------------------------------
+| The public site is dark-only: the near-black background and light body copy
+| are applied here so pages never have to repeat them.
+*/
+
+@layer base {
+    html {
+        @apply scroll-smooth;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply min-h-screen bg-bg-primary font-sans text-text-primary antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        @apply font-display;
+    }
+
+    /* A single, consistent focus treatment for every interactive element. */
+    :focus-visible {
+        @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg-primary;
+    }
+
+    /* Text selection picks up the brand gold. */
+    ::selection {
+        @apply bg-accent text-bg-primary;
+    }
+
+    /* Dark scrollbars so the chrome does not flash white. */
+    * {
+        scrollbar-color: #2a2a2a #0a0a0a;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Components
+|--------------------------------------------------------------------------
+| Layout primitives described in the design system: container width, section
+| rhythm, cards and buttons. Components in resources/js use these classes
+| where a pattern repeats, and Tailwind utilities everywhere else.
+*/
+
+@layer components {
+    .container-page {
+        @apply mx-auto w-full max-w-7xl px-6;
+    }
+
+    .section {
+        @apply py-20 md:py-28;
+    }
+
+    .section-title {
+        @apply font-display text-4xl font-semibold tracking-tight text-text-primary;
+    }
+
+    .section-subtitle {
+        @apply mt-4 max-w-2xl text-base leading-relaxed text-text-secondary;
+    }
+
+    .section-eyebrow {
+        @apply text-xs font-semibold uppercase tracking-[0.2em] text-accent;
+    }
+
+    .card {
+        @apply rounded-2xl border border-border bg-bg-elevated p-6;
+    }
+
+    .link-muted {
+        @apply text-text-secondary transition-all duration-300 hover:text-accent;
+    }
+
+    /* Rich text rendered from `pages.content` (sanitised HTML). */
+    .prose-barber {
+        @apply text-base leading-relaxed text-text-secondary;
+    }
+
+    .prose-barber h2 {
+        @apply mt-10 font-display text-2xl font-semibold text-text-primary;
+    }
+
+    .prose-barber h3 {
+        @apply mt-8 font-display text-xl font-semibold text-text-primary;
+    }
+
+    .prose-barber p {
+        @apply mt-4;
+    }
+
+    .prose-barber ul {
+        @apply mt-4 space-y-2 pl-5;
+    }
+
+    .prose-barber li {
+        @apply list-disc marker:text-accent;
+    }
+
+    .prose-barber a {
+        @apply text-accent underline underline-offset-4 transition-all duration-300 hover:text-accent-hover;
+    }
+
+    .prose-barber strong {
+        @apply font-semibold text-text-primary;
+    }
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img" aria-labelledby="pf02">
+  <title id="pf02">Ножницы</title>
+  <rect width="800" height="800" fill="#1c1c1c"/>
+  <rect x="40" y="40" width="720" height="720" rx="60" fill="none" stroke="#c9a961" stroke-width="2" opacity="0.2"/>
+  <g fill="none" stroke="#c9a961" stroke-width="22" stroke-linecap="round">
+    <circle cx="300" cy="620" r="72"/>
+    <circle cx="500" cy="620" r="72"/>
+    <line x1="330" y1="570" x2="560" y2="170"/>
+    <line x1="470" y1="570" x2="240" y2="170"/>
+  </g>
+  <circle cx="400" cy="400" r="26" fill="#c9a961"/>
+  <circle cx="400" cy="400" r="52" fill="none" stroke="#c9a961" stroke-width="4" opacity="0.5"/>
+  <line x1="120" y1="300" x2="240" y2="300" stroke="#c9a961" stroke-width="8" opacity="0.35"/>
+  <line x1="560" y1="520" x2="680" y2="520" stroke="#c9a961" stroke-width="8" opacity="0.35"/>
+</svg>

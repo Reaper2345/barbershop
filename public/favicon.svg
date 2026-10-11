@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Барбершоп Бритва">
+    <rect width="64" height="64" rx="12" fill="#a67c52"/>
+    <g fill="none" stroke="#faf7f2" stroke-width="3" stroke-linecap="round">
+        <circle cx="22" cy="24" r="7"/>
+        <circle cx="22" cy="42" r="7"/>
+        <path d="M28 28 L50 46"/>
+        <path d="M28 38 L50 20"/>
+    </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-label="Фото мастера отсутствует">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#242424"/>
+      <stop offset="1" stop-color="#0f0f0f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.32" r="0.6">
+      <stop offset="0" stop-color="#c9a961" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#c9a961" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <rect width="640" height="800" fill="url(#glow)"/>
+  <circle cx="320" cy="330" r="118" fill="none" stroke="#c9a961" stroke-opacity="0.55" stroke-width="2"/>
+  <g fill="#c9a961" opacity="0.85">
+    <circle cx="320" cy="286" r="42"/>
+    <path d="M320 344c-58 0-104 40-116 96-3 14 8 26 22 26h188c14 0 25-12 22-26-12-56-58-96-116-96Z"/>
+  </g>
+  <path d="M120 660h400" stroke="#c9a961" stroke-opacity="0.25" stroke-width="2"/>
+  <text x="320" y="722" text-anchor="middle" fill="#a3a3a3" font-family="Inter, Helvetica, Arial, sans-serif" font-size="26" letter-spacing="6">BARBERSHOP</text>
+</svg>

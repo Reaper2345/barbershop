@@ -1,0 +1,8 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<FilesMatch "^\.env|composer\.(json|lock)|package(-lock)?\.json|vite\.config\.(js|ts)|tsconfig\.json|tailwind\.config\.js|postcss\.config\.js|phpunit\.xml|\.gitignore|\.gitattributes|\.npmrc|pnpm-lock\.yaml|pnpm-workspace\.yaml|README\.md$">
+    Require all denied
+</FilesMatch>

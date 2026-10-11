@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img" aria-labelledby="pf07">
+  <title id="pf07">Шевроны</title>
+  <rect width="800" height="800" fill="#141414"/>
+  <g fill="none" stroke="#c9a961" stroke-width="26" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M170 200 L400 380 L630 200" opacity="0.95"/>
+    <path d="M170 320 L400 500 L630 320" opacity="0.66"/>
+    <path d="M170 440 L400 620 L630 440" opacity="0.44"/>
+    <path d="M170 560 L400 740 L630 560" opacity="0.24"/>
+  </g>
+  <line x1="120" y1="120" x2="680" y2="120" stroke="#c9a961" stroke-width="6" opacity="0.5"/>
+  <circle cx="400" cy="120" r="16" fill="#c9a961"/>
+  <circle cx="400" cy="120" r="36" fill="none" stroke="#c9a961" stroke-width="3" opacity="0.4"/>
+</svg>
