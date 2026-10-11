@@ -15,6 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         /*
+         * TLS is terminated upstream (the lab's reverse proxy in front of
+         * free-anchor.vps.ktk-45.ru), so the app only ever sees plain HTTP.
+         * Trusting the proxy makes Laravel honour X-Forwarded-*: without it
+         * asset()/route() emit http:// URLs on an https page and the browser
+         * blocks the CSS/JS as mixed content.
+         */
+        $middleware->trustProxies(at: '*');
+
+        /*
          * Guests are sent to the login page instead of hitting a bare 401.
          *
          * `auth` runs before `role:*` (see routes/web.php), so it rejects an
