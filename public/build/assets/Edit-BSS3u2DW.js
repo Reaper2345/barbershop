@@ -1,0 +1,1 @@
+import{j as t}from"./app-DMM-2eiG.js";import{A as o}from"./Create-DvW8gAbO.js";import"./AdminLayout-D6NLSjp6.js";import"./format-D8zzzSAv.js";import"./Button-DcW4crT2.js";import"./Modal-CZT6xESW.js";import"./Input-CvSTkTuJ.js";import"./panel-copy-R3pubHZQ.js";function f({category:r}){return t.jsx(o,{category:r})}export{f as default};

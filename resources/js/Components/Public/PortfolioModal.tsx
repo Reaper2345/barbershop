@@ -144,6 +144,13 @@ export function PortfolioModal({
                             className="block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-border transition-all duration-300 hover:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default"
                         >
                             <Img
+                                /*
+                                 * `key` is the item ID, not the photo URL: two
+                                 * works could legitimately share an image, and
+                                 * the remount is what guarantees the <img>
+                                 * element is rebuilt when the arrows move.
+                                 */
+                                key={item.id}
                                 src={src ?? PORTFOLIO_FALLBACK}
                                 fallbackSrc={PORTFOLIO_FALLBACK}
                                 alt={title}

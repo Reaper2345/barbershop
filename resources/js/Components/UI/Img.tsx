@@ -39,6 +39,22 @@ export function Img({
 }: ImgProps) {
     const [current, setCurrent] = useState(src);
     const [stage, setStage] = useState<0 | 1 | 2>(0);
+    /**
+     * The `src` the state above was derived from.
+     *
+     * WITHOUT this, `<Img>` showed the FIRST source it ever received forever:
+     * `useState(src)` only reads the prop on mount, so a gallery that swaps
+     * `src` (the portfolio modal's arrows, for example) updated every other
+     * field while the picture stayed behind. Resetting during render is the
+     * React-documented "adjust state when a prop changes" pattern.
+     */
+    const [tracked, setTracked] = useState(src);
+
+    if (src !== tracked) {
+        setTracked(src);
+        setCurrent(src);
+        setStage(0);
+    }
 
     const handleError = (): void => {
         if (stage === 0 && fallbackSrc !== src) {
