@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\AppointmentStatus;
 use App\Enums\Role;
 use App\Models\Appointment;
 use App\Models\User;
@@ -65,6 +66,17 @@ class AppointmentPolicy
     public function review(User $user, Appointment $appointment): bool
     {
         return $this->ownsAsClient($user, $appointment);
+    }
+
+    /**
+     * Client-side code confirmation: only the client who made the booking, and
+     * only while it is still waiting for its code. A confirmed, cancelled or
+     * already-started booking has nothing left to verify.
+     */
+    public function verify(User $user, Appointment $appointment): bool
+    {
+        return $this->ownsAsClient($user, $appointment)
+            && $appointment->status === AppointmentStatus::Pending;
     }
 
     public function delete(User $user, Appointment $appointment): bool

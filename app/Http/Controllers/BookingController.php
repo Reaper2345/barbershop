@@ -133,8 +133,10 @@ class BookingController extends Controller
             'ends_at' => $startsAt->copy()->addMinutes($duration),
             'status' => AppointmentStatus::Pending,
             'client_comment' => $request->validated('client_comment'),
-            // Quoted to the shop by email so a phone call can be tied to this row.
-            'confirmation_code' => strtoupper(Str::random(6)),
+            // 6 digits the client types back on /booking/verify/{id}.
+            'confirmation_code' => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+            'confirmation_attempts' => 0,
+            'confirmation_sent_at' => Carbon::now(),
             'photo_path' => null,
             'master_price_min' => null,
             'master_price_max' => null,
@@ -156,22 +158,27 @@ class BookingController extends Controller
         }
 
         /*
-         * Confirmation email.
+         * Client confirmation code.
          *
-         * The appointment is ALREADY committed above and stays that way whatever
-         * happens here: a broken mail channel must never lose a booking. The only
-         * thing that changes is what the client is told.
+         * The booking is ALREADY committed above and stays that way whatever
+         * happens here: a broken mail channel must never lose a booking.
+         *
+         * The code goes to the CLIENT — only they can confirm it. The shop's
+         * `confirmation_email` is a fallback for the master to look a code up,
+         * never the recipient of this message.
          */
-        $confirmationEmail = trim((string) Setting::get('confirmation_email'));
+        $clientEmail = (string) ($appointment->client?->email ?? '');
         $mailFailed = false;
 
-        if ($confirmationEmail === '') {
-            // No address configured: nothing to send, and the admin has to fix it.
+        if ($clientEmail === '') {
+            // Registration requires an email, so this is a data anomaly.
+            report(new RuntimeException('Appointment #'.$appointment->id.' has no client email; code not sent.'));
             $mailFailed = true;
         } else {
             try {
-                Mail::to($confirmationEmail)
-                    ->send(new AppointmentConfirmationMail($appointment->loadMissing(['client', 'master.user', 'service'])));
+                Mail::to($clientEmail)->send(
+                    new AppointmentConfirmationMail($appointment->loadMissing(['client', 'master.user', 'service'])),
+                );
             } catch (Throwable $exception) {
                 report($exception);
                 $mailFailed = true;
@@ -180,15 +187,13 @@ class BookingController extends Controller
 
         if ($mailFailed) {
             return redirect()
-                ->route('cabinet.index')
+                ->route('booking.verify', $appointment)
                 ->with('warning', 'Заявка сохранена, но письмо с кодом не удалось отправить. Свяжитесь с барбершопом по телефону: '
                     .(string) Setting::get('phone')
-                    .'. Мастер также увидит заявку в панели и подтвердит её вручную.');
+                    .'. Или нажмите «Отправить код заново» на этой странице.');
         }
 
-        return redirect()
-            ->route('cabinet.index')
-            ->with('success', 'Заявка отправлена! Мастер подтвердит запись и назовёт стоимость. Код подтверждения отправлен на '.$confirmationEmail);
+        return redirect()->route('booking.verify', $appointment);
     }
 
     /**

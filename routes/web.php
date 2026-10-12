@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingVerifyController;
 use App\Http\Controllers\ClientCabinetController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LeadController;
@@ -100,6 +101,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/booking', [BookingController::class, 'store'])
         ->middleware('throttle:20,1')
         ->name('booking.store');
+
+    /*
+     * Client-side code confirmation. A freshly created booking redirects here;
+     * every action is gated by AppointmentPolicy@verify (owning client, still
+     * pending), so no extra middleware is needed.
+     */
+    Route::get('/booking/verify/{appointment}', [BookingVerifyController::class, 'show'])
+        ->name('booking.verify');
+    Route::post('/booking/verify/{appointment}', [BookingVerifyController::class, 'verify'])
+        ->middleware('throttle:20,1')
+        ->name('booking.verify.submit');
+    Route::post('/booking/verify/{appointment}/resend', [BookingVerifyController::class, 'resend'])
+        ->middleware('throttle:10,1')
+        ->name('booking.verify.resend');
+    Route::post('/booking/verify/{appointment}/cancel', [BookingVerifyController::class, 'cancel'])
+        ->name('booking.verify.cancel');
 
     /*
      * Slot lookup for the booking wizard.

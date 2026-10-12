@@ -45,6 +45,8 @@ class Appointment extends Model
         'ends_at',
         'status',
         'confirmation_code',
+        'confirmation_attempts',
+        'confirmation_sent_at',
         'client_comment',
         'photo_path',
         'master_price_min',
@@ -60,6 +62,7 @@ class Appointment extends Model
     {
         return [
             'starts_at' => 'datetime',
+            'confirmation_sent_at' => 'datetime',
             'ends_at' => 'datetime',
             'status' => AppointmentStatus::class,
             'master_price_min' => 'decimal:2',

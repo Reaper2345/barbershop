@@ -36,6 +36,15 @@ export const routes = {
         privacy: '/privacy',
     },
 
+    /**
+     * Client-side code confirmation. `booking.verify` is where a freshly created
+     * booking lands; the other two are its POST endpoints.
+     */
+    bookingVerify: (id: number | string): string => `/booking/verify/${id}`,
+    bookingVerifySubmit: (id: number | string): string => `/booking/verify/${id}`,
+    bookingResend: (id: number | string): string => `/booking/verify/${id}/resend`,
+    bookingCancelVerify: (id: number | string): string => `/booking/verify/${id}/cancel`,
+
     booking: (params?: { master?: number | string; service?: number | string }): string => {
         const query = new URLSearchParams();
 
