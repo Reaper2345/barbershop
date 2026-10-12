@@ -318,25 +318,26 @@ export function VenueMap({
 
     return (
         /*
-         * `flex h-full flex-col`: the map sits in a grid cell that the grid
-         * stretches to the row height (the contact list beside it is taller), so
-         * the wrapper has to fill that cell and the map has to fill the wrapper.
-         * A fixed height here (it used to be h-[18rem]) left ~45px of dead space
-         * beside the contact block on every large screen.
+         * The map fills its grid cell completely: the grid stretches the cell to
+         * the row height (the contact list beside it is taller), the wrapper is
+         * `h-full`, and the address caption is OVERLAID on the bottom edge rather
+         * than stacked under the map. A fixed height (it used to be h-[18rem])
+         * plus an in-flow caption left ~45px of dead space beside the contact
+         * block on every large screen.
          */
-        <div className={['flex h-full flex-col', className ?? ''].join(' ')}>
+        <div className={['relative h-full', className ?? ''].join(' ')}>
             {useYandex ? (
                 // Key configured: render (or keep) the v3 target. While the
                 // script loads the container is simply empty, which is why the
                 // border/background are already painted.
                 <div
                     ref={containerRef}
-                    className="h-full min-h-[20rem] w-full flex-1 overflow-hidden rounded-2xl border border-border bg-bg-elevated [touch-action:pan-y]"
+                    className="h-full min-h-[20rem] w-full overflow-hidden rounded-2xl border border-border bg-bg-elevated [touch-action:pan-y]"
                     role="region"
                     aria-label={address === null ? 'Карта' : `Карта: ${address}`}
                 />
             ) : (
-                <div className="relative h-full min-h-[20rem] flex-1 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+                <div className="h-full min-h-[20rem] overflow-hidden rounded-2xl border border-border bg-bg-elevated">
                     <iframe
                         title={address === null ? 'Карта' : `Карта: ${address}`}
                         src={embedSrc}
@@ -363,8 +364,11 @@ export function VenueMap({
                 </div>
             )}
 
+            {/* Overlaid, not stacked: an in-flow caption would shorten the map
+                by its own height and leave the dead space the owner complained
+                about. `pointer-events-none` keeps the map clickable behind it. */}
             {(address !== null || (note !== undefined && note !== null)) && (
-                <p className="mt-3 text-xs text-text-secondary">
+                <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-xl border border-border bg-bg-elevated/90 px-3 py-2 text-xs text-text-secondary backdrop-blur">
                     {address}
                     {address !== null && note !== undefined && note !== null ? ' · ' : ''}
                     {note}
