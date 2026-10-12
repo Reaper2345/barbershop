@@ -609,7 +609,9 @@ export default function BookingCreate({
                         />
                     </div>
 
-                    <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-14">
+                    {/* Two columns from lg so the sticky recap below has a
+                        column to stick in; it is plain flow on mobile. */}
+                    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
                         {/* Step body */}
                         <div>
                             {step === 1 && (
@@ -739,8 +741,11 @@ export default function BookingCreate({
                             )}
                         </div>
 
-                        {/* Sticky recap */}
-                        <aside className="xl:sticky xl:top-28 xl:self-start">
+                        {/* Sticky recap. Sticky from lg (not xl): the summary is
+                            the only thing the visitor cross-checks while
+                            scrolling a long step, and lg is where the two-column
+                            wizard layout starts. */}
+                        <aside className="lg:sticky lg:top-28 lg:self-start">
                             <p className="mb-3 text-xs uppercase tracking-wider text-text-secondary">
                                 {BOOKING_COPY.summary}
                             </p>

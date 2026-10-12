@@ -35,6 +35,7 @@ export function MobileMenu({
 }: MobileMenuProps) {
     // Reactive: updates on every Inertia visit.
     const url = String(usePage<SharedProps>().url ?? '/');
+    const { appName } = usePage<SharedProps>().props;
 
     /*
      * Mirrors Header: on a master's detail page the CTA keeps that master,
@@ -104,7 +105,7 @@ export function MobileMenu({
     }
 
     const phone = settings.phone ?? null;
-    const siteName = settings.site_name ?? 'Барбершоп';
+    const siteName = settings.site_name ?? appName ?? 'Барбершоп';
 
     return (
         <div className="fixed inset-0 z-50 lg:hidden">

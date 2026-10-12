@@ -3,6 +3,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { Button } from '@/Components/UI/Button';
+import { MODAL_ACTIONS_CLASS } from '@/Components/UI/Modal';
 import { Input } from '@/Components/UI/Input';
 import { Modal } from '@/Components/UI/Modal';
 import { EmptyState } from '@/Components/UI/EmptyState';
@@ -632,7 +633,7 @@ function QuickTimeOffModal({ type, onClose }: { type: TimeOffType; onClose: () =
                     </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={MODAL_ACTIONS_CLASS}>
                     <Button type="submit" loading={form.processing}>
                         Сохранить
                     </Button>

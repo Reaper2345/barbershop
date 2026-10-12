@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useForm } from '@inertiajs/react';
 import { PhotoDropzone } from '@/Components/Booking/PhotoDropzone';
 import { Button } from '@/Components/UI/Button';
+import { MODAL_ACTIONS_CLASS } from '@/Components/UI/Modal';
 import { Input } from '@/Components/UI/Input';
 import { Select } from '@/Components/UI/Select';
 import { Textarea } from '@/Components/UI/Textarea';
@@ -313,7 +314,7 @@ export function PortfolioItemForm({
                 </p>
             )}
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className={embedded ? MODAL_ACTIONS_CLASS : 'flex flex-wrap items-center gap-3'}>
                 <Button type="submit" loading={form.processing} size="lg">
                     Сохранить
                 </Button>

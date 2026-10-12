@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { PhotoDropzone } from '@/Components/Booking/PhotoDropzone';
 import { Button } from '@/Components/UI/Button';
+import { MODAL_ACTIONS_CLASS } from '@/Components/UI/Modal';
 import { Input } from '@/Components/UI/Input';
 import { PhoneInput } from '@/Components/UI/PhoneInput';
 import { Textarea } from '@/Components/UI/Textarea';
@@ -556,7 +557,14 @@ function FormActions({
     onCancel?: () => void;
 }) {
     return (
-        <div className="flex flex-wrap items-center gap-3">
+        <div
+            className={cn(
+                MODAL_ACTIONS_CLASS,
+                // `onCancel` is only passed inside the modal; on the standalone
+                // page the row stays a plain in-flow block.
+                onCancel === undefined && 'flex flex-wrap items-center gap-3',
+            )}
+        >
             <Button type="submit" loading={processing} size="lg">
                 {isEdit ? PANEL.common.save : PANEL.common.create}
             </Button>

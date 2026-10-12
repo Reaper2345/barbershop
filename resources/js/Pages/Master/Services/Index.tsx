@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { Button } from '@/Components/UI/Button';
+import { MODAL_ACTIONS_CLASS } from '@/Components/UI/Modal';
 import { Input } from '@/Components/UI/Input';
 import { Modal } from '@/Components/UI/Modal';
 import { Badge } from '@/Components/UI/Badge';
@@ -444,7 +445,7 @@ function EditServiceForm({
                     </p>
                 )}
 
-                <div className="flex flex-col gap-3 sm:flex-row-reverse">
+                <div className={cn(MODAL_ACTIONS_CLASS, 'flex-col sm:flex-row-reverse')}>
                     <Button type="submit" loading={form.processing} fullWidth className="sm:w-auto">
                         Сохранить
                     </Button>

@@ -1,4 +1,4 @@
-# Барбершоп «Бритва» — booking app
+# Барбершоп «Ксививайд» — booking app
 
 Laravel 11 + Inertia.js + React 18 + TypeScript + TailwindCSS + MySQL 8, with
 `spatie/laravel-permission` for the `admin` / `master` / `client` roles.

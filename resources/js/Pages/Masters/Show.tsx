@@ -64,7 +64,8 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
     const portfolioTotal = portfolio?.total ?? 0;
 
     // One overlay for the whole page; the cards just report which photo was
-    // clicked.
+    // clicked. It serves BOTH the review photos and the portfolio gallery, so
+    // the gallery photo is derived below rather than pushed into this state.
     const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
 
     // Review whose full text is open in the modal (null = closed).
@@ -72,24 +73,35 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
 
     // Portfolio work whose full detail is open in the modal (null = closed).
     const [portfolioIndex, setPortfolioIndex] = useState<number | null>(null);
+    /** The Lightbox is a second layer over the portfolio modal. */
+    const [portfolioLightboxOpen, setPortfolioLightboxOpen] = useState(false);
 
     /**
-     * Gallery step used by the modal arrows, the keyboard and the lightbox.
-     * While the lightbox is open it follows the selection, so the full-size
-     * photo never shows a stale work.
+     * Photo of a work, DERIVED from the current index — never captured when the
+     * lightbox opened, which is what left the original photo on screen while the
+     * counter moved.
      */
+    const portfolioLightboxPhoto = (() => {
+        if (!portfolioLightboxOpen || portfolioIndex === null) {
+            return null;
+        }
+
+        const work = portfolioItems[portfolioIndex];
+
+        if (work === undefined) {
+            return null;
+        }
+
+        return {
+            src: portfolioPhoto(work.photo_path),
+            alt: work.title ?? 'Работа мастера',
+            caption: name,
+        };
+    })();
+
+    /** Gallery step shared by the modal arrows, the keyboard and the lightbox. */
     const openWork = (position: number): void => {
         setPortfolioIndex(position);
-
-        const work = portfolioItems[position];
-
-        if (lightbox !== null && work !== undefined) {
-            setLightbox({
-                src: portfolioPhoto(work.photo_path),
-                alt: work.title ?? 'Работа мастера',
-                caption: name,
-            });
-        }
     };
 
     // Weekdays this master is scheduled to work, derived from `schedules`.
@@ -357,20 +369,23 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
 
                                             return (
                                                 <li key={item.id}>
-                                                    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
+                                                    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
+                                                        {/* Stretched hit area: the whole card opens the modal. */}
                                                         <button
                                                             type="button"
                                                             onClick={() => setPortfolioIndex(position)}
-                                                            className="block w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                                            className="absolute inset-0 z-10 cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                                             aria-label={`Открыть работу «${title}»`}
-                                                        >
+                                                        />
+
+                                                        <div className="overflow-hidden">
                                                             <Img
                                                                 src={src}
                                                                 fallbackSrc={PORTFOLIO_FALLBACK}
                                                                 alt={title}
                                                                 className="aspect-square w-full transition-transform duration-500 group-hover:scale-[1.03]"
                                                             />
-                                                        </button>
+                                                        </div>
 
                                                         <p className="px-4 py-3 text-sm text-text-primary">
                                                             {title}
@@ -448,20 +463,37 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                 </div>
             </section>
 
+            {/*
+             * One Lightbox for the page. When the portfolio gallery owns it, the
+             * photo comes from `portfolioLightboxPhoto` (derived from the index)
+             * plus the gallery navigation; review photos use the plain state.
+             */}
             <Lightbox
-                open={lightbox !== null}
-                src={lightbox?.src ?? null}
-                alt={lightbox?.alt ?? ''}
-                caption={lightbox?.caption ?? null}
-                onClose={() => setLightbox(null)}
-                onPrev={() => portfolioIndex !== null && openWork(portfolioIndex - 1)}
-                onNext={() => portfolioIndex !== null && openWork(portfolioIndex + 1)}
+                key={(portfolioLightboxPhoto ?? lightbox)?.src ?? 'lightbox'}
+                open={portfolioLightboxPhoto !== null || lightbox !== null}
+                src={(portfolioLightboxPhoto ?? lightbox)?.src ?? null}
+                alt={(portfolioLightboxPhoto ?? lightbox)?.alt ?? ''}
+                caption={(portfolioLightboxPhoto ?? lightbox)?.caption ?? null}
+                onClose={() => {
+                    setLightbox(null);
+                    setPortfolioLightboxOpen(false);
+                }}
+                onPrev={
+                    portfolioLightboxPhoto !== null && portfolioIndex !== null
+                        ? () => openWork(portfolioIndex - 1)
+                        : undefined
+                }
+                onNext={
+                    portfolioLightboxPhoto !== null && portfolioIndex !== null
+                        ? () => openWork(portfolioIndex + 1)
+                        : undefined
+                }
                 canPrev={portfolioIndex !== null && portfolioIndex > 0}
                 canNext={
                     portfolioIndex !== null && portfolioIndex < portfolioItems.length - 1
                 }
                 counter={
-                    portfolioIndex === null
+                    portfolioLightboxPhoto === null || portfolioIndex === null
                         ? null
                         : `${portfolioIndex + 1} / ${portfolioItems.length}`
                 }
@@ -479,7 +511,7 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                 index={portfolioIndex}
                 onNavigate={openWork}
                 onClose={() => setPortfolioIndex(null)}
-                onPhotoClick={setLightbox}
+                onPhotoClick={() => setPortfolioLightboxOpen(true)}
                 showMasterLink={false}
             />
         </AppLayout>

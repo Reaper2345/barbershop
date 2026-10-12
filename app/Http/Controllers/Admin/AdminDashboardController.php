@@ -176,6 +176,11 @@ class AdminDashboardController extends Controller
     /**
      * The ten most recent bookings, shaped for the dashboard table.
      *
+     * The dashboard opens the SAME detail modal the appointments list uses, so
+     * the rows carry the fields that modal reads (phone, duration, comment,
+     * reference photo, agreed price) — otherwise it would render a mostly empty
+     * version of the detail screen.
+     *
      * @return list<array<string, mixed>>
      */
     private function recentAppointments(): array
@@ -188,18 +193,35 @@ class AdminDashboardController extends Controller
             ->map(fn (Appointment $appointment): array => [
                 'id' => $appointment->id,
                 'starts_at' => $appointment->starts_at?->toIso8601String(),
+                'ends_at' => $appointment->ends_at?->toIso8601String(),
+                'starts_at_label' => $appointment->starts_at?->translatedFormat('j F Y, H:i'),
                 'date_label' => $appointment->starts_at?->translatedFormat('j F Y'),
                 'time_label' => $appointment->starts_at?->format('H:i'),
+                'duration_min' => $appointment->duration_min,
                 'status' => $appointment->status->value,
                 'status_label' => $appointment->status->label(),
+                'status_color' => $appointment->status->color(),
                 'price_label' => $appointment->final_price_label,
+                'final_price_label' => $appointment->final_price_label,
+                'client_comment' => $appointment->client_comment,
+                'master_comment' => $appointment->master_comment,
+                'photo_path' => $appointment->photo_path,
+                'photo_url' => $appointment->photo_url,
+                'master_price_min' => $appointment->master_price_min,
+                'master_price_max' => $appointment->master_price_max,
+                'master_price_offer' => $appointment->master_price_offer,
                 'client' => $appointment->client === null ? null : [
                     'id' => $appointment->client->id,
                     'name' => $appointment->client->name,
+                    'phone' => $appointment->client->phone,
                 ],
                 'master' => $appointment->master === null ? null : [
                     'id' => $appointment->master->id,
                     'name' => $appointment->master->user?->name,
+                    'user' => $appointment->master->user === null ? null : [
+                        'id' => $appointment->master->user->id,
+                        'name' => $appointment->master->user->name,
+                    ],
                 ],
                 'service' => $appointment->service === null ? null : [
                     'id' => $appointment->service->id,

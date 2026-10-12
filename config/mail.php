@@ -40,7 +40,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@barber.test'),
-        'name' => env('MAIL_FROM_NAME', 'Барбершоп «Бритва»'),
+        'name' => env('MAIL_FROM_NAME', 'Ксививайд'),
     ],
 
 ];

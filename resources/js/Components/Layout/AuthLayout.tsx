@@ -23,8 +23,8 @@ export interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, title, subtitle, footer }: AuthLayoutProps) {
-    const { siteSettings } = usePage<SharedProps>().props;
-    const siteName = siteSettings.site_name ?? 'Барбершоп';
+    const { siteSettings, appName } = usePage<SharedProps>().props;
+    const siteName = siteSettings.site_name ?? appName ?? 'Барбершоп';
 
     return (
         <div className="flex min-h-screen flex-col bg-bg-primary">

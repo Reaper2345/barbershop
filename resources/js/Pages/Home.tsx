@@ -60,14 +60,14 @@ export default function Home({
     features,
     portfolioItems = [],
 }: HomeProps) {
-    const { siteSettings } = usePage<SharedProps>().props;
+    const { siteSettings, appName } = usePage<SharedProps>().props;
 
     // Single overlay for the review carousel.
     const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
 
-    const heroTitle = siteSettings.hero_title ?? 'Барбершоп в центре города';
+    const heroTitle = siteSettings.hero_title ?? appName ?? 'Барбершоп';
     const heroSubtitle = siteSettings.hero_subtitle ?? null;
-    const siteName = siteSettings.site_name ?? 'Барбершоп';
+    const siteName = siteSettings.site_name ?? appName ?? 'Барбершоп';
     const address = siteSettings.address ?? null;
     const phone = siteSettings.phone ?? null;
     const workHours = siteSettings.work_hours ?? null;
@@ -155,7 +155,10 @@ export default function Home({
                             <SectionHeading
                                 id="about-heading"
                                 eyebrow={COPY.about.eyebrow}
-                                title={COPY.about.title}
+                                // The shop name, straight from the `site_name`
+                                // setting: renaming it in /admin/settings updates
+                                // this heading without a rebuild.
+                                title={siteName}
                             />
 
                             <p className="mt-6 max-w-2xl text-base leading-relaxed text-text-secondary">

@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title inertia>{{ config('app.name', 'Барбершоп') }}</title>
+    {{--
+        The first-paint title. `site_name` (editable in /admin/settings) wins;
+        APP_NAME via config('app.name') is the fallback. Inertia replaces this
+        with the per-page title once the app hydrates (`@inertiaHead`).
+    --}}
+    <title inertia>{{ \App\Models\Setting::allCached()['site_name'] ?? config('app.name', 'Барбершоп') }}</title>
 
     {{--
         Typography: Playfair Display for headings, Inter for body copy.

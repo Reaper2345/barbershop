@@ -255,6 +255,11 @@ export interface SharedProps {
      * badges survive navigation. Empty for clients and masters.
      */
     navCounts?: Record<string, number>;
+    /**
+     * `config('app.name')` — the fallback used when the `site_name` setting is
+     * empty, so the brand is not hardcoded in the React tree.
+     */
+    appName?: string;
     [key: string]: unknown;
 }
 

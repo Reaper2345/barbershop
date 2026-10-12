@@ -29,6 +29,17 @@ export interface ModalProps {
     hideCloseButton?: boolean;
 }
 
+/**
+ * Sticky action row for a form rendered as modal CHILDREN.
+ *
+ * The long admin/master forms own their submit row (they need the form element
+ * around it), so it cannot ride the `footer` prop — this class pins that row to
+ * the bottom of the scrolling body instead, with an opaque background so the
+ * fields behind it do not bleed through.
+ */
+export const MODAL_ACTIONS_CLASS =
+    'sticky bottom-0 z-10 -mx-1 mt-2 flex flex-wrap items-center gap-3 border-t border-border bg-bg-elevated/95 px-1 pb-1 pt-4 backdrop-blur';
+
 const SIZES = {
     sm: 'max-w-sm',
     md: 'max-w-lg',

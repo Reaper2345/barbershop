@@ -24,9 +24,9 @@ import type { SharedProps } from '@/types';
 */
 
 export function Footer() {
-    const { siteSettings } = usePage<SharedProps>().props;
+    const { siteSettings, appName } = usePage<SharedProps>().props;
 
-    const siteName = siteSettings.site_name ?? 'Барбершоп';
+    const siteName = siteSettings.site_name ?? appName ?? 'Барбершоп';
     const about = siteSettings.about_text ?? null;
     const address = siteSettings.address ?? null;
     const phone = siteSettings.phone ?? null;

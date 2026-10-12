@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { Button } from '@/Components/UI/Button';
+import { MODAL_ACTIONS_CLASS } from '@/Components/UI/Modal';
 import { Input } from '@/Components/UI/Input';
 import { Select } from '@/Components/UI/Select';
 import { Textarea } from '@/Components/UI/Textarea';
@@ -329,7 +330,7 @@ export default function AdminServiceForm({
                     </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={cn(MODAL_ACTIONS_CLASS, !embedded && 'flex flex-wrap items-center gap-3')}>
                     <Button type="submit" loading={form.processing} size="lg">
                         {isEdit ? PANEL.common.save : PANEL.common.create}
                     </Button>

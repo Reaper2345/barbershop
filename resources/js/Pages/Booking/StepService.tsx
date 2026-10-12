@@ -67,8 +67,10 @@ export function StepService({
             )}
 
             <div className="mt-8 grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-                {/* Categories */}
-                <div>
+                {/* Categories. Sticky from lg: the service list is long, and the
+                    rail is how the visitor switches between directions. Below lg
+                    it stays in normal flow. */}
+                <div className="lg:sticky lg:top-28 lg:self-start">
                     <p className="text-xs uppercase tracking-wider text-text-secondary">
                         {BOOKING_COPY.categoriesLabel}
                     </p>

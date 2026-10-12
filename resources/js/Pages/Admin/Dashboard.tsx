@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
+import { AppointmentDetailModal } from './Appointments/Index';
+import { Lightbox, type LightboxPhoto } from '@/Components/UI/Lightbox';
 import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { StatCard } from '@/Components/Admin/StatCard';
 import { Button } from '@/Components/UI/Button';
@@ -18,6 +20,7 @@ import type {
     AdminMetricRow,
     AdminRecentAppointmentRow,
     AdminTopMasterRow,
+    CabinetAppointment,
 } from '@/types';
 
 /*
@@ -52,6 +55,9 @@ export default function AdminDashboard({
     const [masterDir, setMasterDir] = useState<'asc' | 'desc'>('desc');
     const [recentSort, setRecentSort] = useState<string | null>(null);
     const [recentDir, setRecentDir] = useState<'asc' | 'desc'>('desc');
+    /** Recent row opened in the shared detail modal. */
+    const [openAppointment, setOpenAppointment] = useState<AdminRecentAppointmentRow | null>(null);
+    const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
 
     const pendingAppointments = stats.appointments_pending ?? 0;
     const pendingReviews = stats.reviews_pending ?? 0;
@@ -288,7 +294,7 @@ export default function AdminDashboard({
                 ) : (
                     <DataTable
                         caption={PANEL.admin.recentTitle}
-                        columns={recentColumns}
+                        columns={recentColumns(setOpenAppointment)}
                         rows={
                             recentSort === null
                                 ? recentAppointments
@@ -331,6 +337,24 @@ export default function AdminDashboard({
                     />
                 )}
             </section>
+
+            {/*
+             * The same detail modal (and Lightbox) the appointments list uses —
+             * imported from there so the two screens cannot drift apart.
+             */}
+            <AppointmentDetailModal
+                appointment={openAppointment as unknown as CabinetAppointment | null}
+                onClose={() => setOpenAppointment(null)}
+                onPhotoClick={setLightbox}
+            />
+
+            <Lightbox
+                open={lightbox !== null}
+                src={lightbox?.src ?? null}
+                alt={lightbox?.alt ?? ''}
+                caption={lightbox?.caption ?? null}
+                onClose={() => setLightbox(null)}
+            />
         </AdminLayout>
     );
 }
@@ -420,7 +444,10 @@ const topMasterColumns: Array<DataTableColumn<AdminTopMasterRow>> = [
     },
 ];
 
-const recentColumns: Array<DataTableColumn<AdminRecentAppointmentRow>> = [
+/** Factory: the «Открыть» action needs the page's modal setter. */
+const recentColumns = (
+    onOpen: (row: AdminRecentAppointmentRow) => void,
+): Array<DataTableColumn<AdminRecentAppointmentRow>> => [
     {
         key: 'date',
         header: 'Дата',
@@ -488,13 +515,19 @@ const recentColumns: Array<DataTableColumn<AdminRecentAppointmentRow>> = [
          * (GET /admin/appointments/{id} → Admin\AppointmentController@show).
          */
         render: (row) => (
-            <Link
-                href={routes.admin.appointment(row.id)}
+            /*
+             * Opens the SAME detail modal the appointments list uses, instead of
+             * navigating to the full page. The anchor stays available on the
+             * appointments screen itself for direct links.
+             */
+            <button
+                type="button"
+                onClick={() => onOpen(row)}
                 aria-label={`Открыть запись №${row.id}`}
                 className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm text-text-primary transition-all duration-300 hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-accent"
             >
                 Открыть
-            </Link>
+            </button>
         ),
     },
 ];

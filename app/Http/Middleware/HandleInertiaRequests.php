@@ -64,6 +64,14 @@ class HandleInertiaRequests extends Middleware
             'siteSettings' => fn (): array => Setting::allCached(),
 
             /*
+             * Fallback for the shop name. `site_name` (a setting, editable in
+             * /admin/settings) is the source of truth everywhere on the public
+             * site; this is what the layouts use when that setting is empty, so
+             * the brand lives in APP_NAME rather than being hardcoded in the JS.
+             */
+            'appName' => fn (): string => (string) config('app.name'),
+
+            /*
              * Sidebar counters, shared with EVERY request.
              *
              * They used to be passed per page (only the dashboard and the reviews

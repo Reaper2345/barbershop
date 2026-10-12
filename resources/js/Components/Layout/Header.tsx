@@ -26,7 +26,7 @@ import type { SharedProps } from '@/types';
 
 export function Header() {
     const page = usePage<SharedProps>();
-    const { siteSettings, auth } = page.props;
+    const { siteSettings, auth, appName } = page.props;
 
     /*
      * The active nav item is derived from Inertia's reactive page object.
@@ -49,7 +49,7 @@ export function Header() {
     const accountRef = useRef<HTMLDivElement>(null);
 
     const phone = siteSettings.phone ?? null;
-    const siteName = siteSettings.site_name ?? 'Барбершоп';
+    const siteName = siteSettings.site_name ?? appName ?? 'Барбершоп';
     const user = auth.user;
 
     // Close the account dropdown on an outside click or Escape.

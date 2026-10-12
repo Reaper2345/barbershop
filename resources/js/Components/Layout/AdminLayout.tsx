@@ -61,7 +61,7 @@ export function AdminLayout({
     breadcrumbs = [],
     notificationCount,
 }: AdminLayoutProps) {
-    const { auth, siteSettings, navCounts } = usePage<SharedProps>().props;
+    const { auth, siteSettings, navCounts, appName } = usePage<SharedProps>().props;
     const { url } = usePage();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -101,7 +101,7 @@ export function AdminLayout({
             : (navCounts['/admin/appointments'] ?? 0) + (navCounts['/admin/reviews'] ?? 0));
 
     const user = auth.user;
-    const siteName = siteSettings.site_name ?? 'Барбершоп';
+    const siteName = siteSettings.site_name ?? appName ?? 'Барбершоп';
 
     const logout = (): void => {
         router.post(routes.logout);

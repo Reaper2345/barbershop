@@ -42,14 +42,15 @@ export default function PortfolioIndex({
     const activeMaster = filters?.master ?? null;
 
     // One overlay of each kind for the whole grid; the cards report clicks.
-    const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
     const [selected, setSelected] = useState<number | null>(null);
+    /** The Lightbox is a second layer over the modal, not a second selection. */
+    const [lightboxOpen, setLightboxOpen] = useState(false);
 
     /**
      * Photo of a work, in the shape the Lightbox wants.
      */
-    const photoFor = (position: number): LightboxPhoto | null => {
-        const work = works[position];
+    const photoFor = (position: number | null): LightboxPhoto | null => {
+        const work = position === null ? undefined : works[position];
 
         if (work === undefined) {
             return null;
@@ -63,20 +64,15 @@ export default function PortfolioIndex({
     };
 
     /**
-     * Gallery step used by the modal arrows, the keyboard and the lightbox.
-     * While the lightbox is open it follows the selection, so the full-size
-     * photo never shows a stale work.
+     * DERIVED from the current index, never captured when the lightbox opened:
+     * that is what made the arrows bump the counter while the original photo
+     * stayed on screen.
      */
+    const lightboxPhoto = lightboxOpen ? photoFor(selected) : null;
+
+    /** Gallery step shared by the modal arrows, the keyboard and the lightbox. */
     const openWork = (position: number): void => {
         setSelected(position);
-
-        if (lightbox !== null) {
-            const photo = photoFor(position);
-
-            if (photo !== null) {
-                setLightbox(photo);
-            }
-        }
     };
 
     const totalCount = masters.reduce((sum, master) => sum + master.items_count, 0);
@@ -252,15 +248,21 @@ export default function PortfolioIndex({
                 index={selected}
                 onNavigate={openWork}
                 onClose={() => setSelected(null)}
-                onPhotoClick={setLightbox}
+                onPhotoClick={() => setLightboxOpen(true)}
             />
 
             <Lightbox
-                open={lightbox !== null}
-                src={lightbox?.src ?? null}
-                alt={lightbox?.alt ?? ''}
-                caption={lightbox?.caption ?? null}
-                onClose={() => setLightbox(null)}
+                open={lightboxPhoto !== null}
+                /*
+                 * `key` remounts the <img> whenever the work changes, so a
+                 * browser that reuses the element (same box, new src) cannot
+                 * leave the previous photo on screen.
+                 */
+                key={lightboxPhoto?.src ?? 'lightbox'}
+                src={lightboxPhoto?.src ?? null}
+                alt={lightboxPhoto?.alt ?? ''}
+                caption={lightboxPhoto?.caption ?? null}
+                onClose={() => setLightboxOpen(false)}
                 onPrev={() => selected !== null && openWork(selected - 1)}
                 onNext={() => selected !== null && openWork(selected + 1)}
                 canPrev={selected !== null && selected > 0}
@@ -344,24 +346,28 @@ function PortfolioCard({
     const title = item.title ?? 'Работа мастера';
 
     return (
-        <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
+        <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
+            {/*
+             * Stretched hit area: the WHOLE card opens the modal (photo, title,
+             * description), not just the image. One absolutely positioned button
+             * instead of wrapping the card, because a <button> may not contain
+             * headings or block content.
+             */}
             <button
                 type="button"
                 onClick={() => onOpen()}
-                className="block aspect-square w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="absolute inset-0 z-10 cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 aria-label={`Открыть работу «${title}»`}
-            >
-                {/*
-                 * A bare <img> (no wrapperClassName) keeps the button's content
-                 * model valid — a <div> inside a <button> is not.
-                 */}
+            />
+
+            <div className="aspect-square w-full overflow-hidden">
                 <Img
                     src={src}
                     fallbackSrc={PORTFOLIO_FALLBACK}
                     alt={title}
                     className="aspect-square w-full transition-transform duration-500 group-hover:scale-[1.03]"
                 />
-            </button>
+            </div>
 
             <div className="flex flex-1 flex-col p-5">
                 <h2 className="font-display text-lg font-semibold text-text-primary">

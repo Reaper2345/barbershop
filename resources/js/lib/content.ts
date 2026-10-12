@@ -68,11 +68,14 @@ export const FEATURES: Feature[] = [
 export const COPY = {
     about: {
         eyebrow: 'О нас',
-        title: 'Барбершоп «Бритва»',
+        // No hardcoded `title`: the heading is the shop name from the
+        // `site_name` setting, so a rename happens in /admin/settings instead of
+        // a code change.
         cta: 'Подробнее',
-        // Used only when the `about_text` setting is empty.
+        // Used only when the `about_text` setting is empty. Brand-neutral, for
+        // the same reason.
         fallback:
-            '«Бритва» — барбершоп для мужчин, которые ценят своё время и внимание к деталям. Мы открылись в 2016 году и сегодня это команда из трёх барберов с суммарным опытом более двадцати пяти лет. Работаем без спешки: на каждого клиента заложено полноценное время.',
+            'Барбершоп для мужчин, которые ценят своё время и внимание к деталям. Мы открылись в 2016 году и сегодня это команда из трёх барберов с суммарным опытом более двадцати пяти лет. Работаем без спешки: на каждого клиента заложено полноценное время.',
     },
     services: {
         eyebrow: 'Услуги',

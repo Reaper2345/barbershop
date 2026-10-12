@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { Button } from '@/Components/UI/Button';
 import { EmptyState } from '@/Components/UI/EmptyState';
 import { PriceRange } from '@/Components/UI/PriceRange';
+import { Lightbox, type LightboxPhoto } from '@/Components/UI/Lightbox';
 import { CategoryIcon, ClockIcon, ScissorsIcon } from '@/lib/icons';
 import { SERVICE_COPY } from '@/lib/content';
 import { routes } from '@/lib/routes';
@@ -27,6 +29,8 @@ export interface ServicesIndexProps {
 }
 
 export default function ServicesIndex({ categories = [] }: ServicesIndexProps) {
+    /** Category illustration opened full screen, if any. */
+    const [preview, setPreview] = useState<LightboxPhoto | null>(null);
     // Categories without active services would render as empty sections.
     const visible = categories.filter((category) => (category.services ?? []).length > 0);
 
@@ -172,20 +176,34 @@ export default function ServicesIndex({ categories = [] }: ServicesIndexProps) {
                                                     </div>
 
                                                     {/*
-                                                     * Category illustration, small and at the bottom of
-                                                     * the row. Decorative: the service name above it
-                                                     * already carries the meaning, and the SVG has its
-                                                     * own <title>.
+                                                     * Category illustration at the bottom of the row.
+                                                     * Clickable: opens the full-size SVG in the
+                                                     * Lightbox. Decorative for screen readers (the
+                                                     * service name above carries the meaning), but
+                                                     * the button is labelled for keyboard users.
                                                      */}
-                                                    <img
-                                                        src={serviceImage(category.slug)}
-                                                        alt=""
-                                                        aria-hidden="true"
-                                                        width={64}
-                                                        height={64}
-                                                        loading="lazy"
-                                                        className="mt-1 h-16 w-16 rounded-xl border border-border/60 opacity-90 transition-opacity duration-300 group-hover:opacity-100"
-                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setPreview({
+                                                                src: serviceImage(category.slug),
+                                                                alt: `${category.name} — иллюстрация`,
+                                                                caption: category.name,
+                                                            })
+                                                        }
+                                                        aria-label={`Открыть иллюстрацию «${category.name}»`}
+                                                        className="mt-1 w-fit cursor-zoom-in rounded-xl border border-border/60 transition-all duration-300 hover:border-accent focus-visible:ring-2 focus-visible:ring-accent"
+                                                    >
+                                                        <img
+                                                            src={serviceImage(category.slug)}
+                                                            alt=""
+                                                            aria-hidden="true"
+                                                            width={64}
+                                                            height={64}
+                                                            loading="lazy"
+                                                            className="h-16 w-16 rounded-xl opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+                                                        />
+                                                    </button>
                                                 </li>
                                             ))}
                                         </ul>
@@ -196,6 +214,16 @@ export default function ServicesIndex({ categories = [] }: ServicesIndexProps) {
                     )}
                 </div>
             </section>
+
+            {/* Category illustration, full screen — the same Lightbox the rest of
+                the public site uses. */}
+            <Lightbox
+                open={preview !== null}
+                src={preview?.src ?? null}
+                alt={preview?.alt ?? ''}
+                caption={preview?.caption ?? null}
+                onClose={() => setPreview(null)}
+            />
         </AppLayout>
     );
 }

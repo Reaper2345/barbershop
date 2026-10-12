@@ -347,7 +347,7 @@ function PriceCell({ appointment }: { appointment: CabinetAppointment }) {
 | comment) and cancel.
 */
 
-function AppointmentDetailModal({
+export function AppointmentDetailModal({
     appointment,
     onClose,
     onPhotoClick,
