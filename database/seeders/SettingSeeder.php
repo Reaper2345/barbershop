@@ -34,6 +34,16 @@ class SettingSeeder extends Seeder
             'value' => 'hello@barber.test',
             'group' => 'contacts',
         ],
+        /*
+         * Where the booking confirmation code is emailed. Empty by default: the
+         * booking flow detects the empty value and tells the client to phone the
+         * shop instead, while the admin fills this in /admin/settings.
+         */
+        [
+            'key' => 'confirmation_email',
+            'value' => '',
+            'group' => 'contacts',
+        ],
         [
             'key' => 'instagram',
             'value' => 'https://instagram.com/britva.barbershop',

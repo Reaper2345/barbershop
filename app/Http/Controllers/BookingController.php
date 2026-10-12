@@ -4,15 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
 use App\Http\Requests\StoreAppointmentRequest;
+use App\Mail\AppointmentConfirmationMail;
 use App\Models\Appointment;
 use App\Models\Category;
 use App\Models\Master;
 use App\Models\Page;
+use App\Models\Setting;
 use App\Services\SlotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -129,6 +133,8 @@ class BookingController extends Controller
             'ends_at' => $startsAt->copy()->addMinutes($duration),
             'status' => AppointmentStatus::Pending,
             'client_comment' => $request->validated('client_comment'),
+            // Quoted to the shop by email so a phone call can be tied to this row.
+            'confirmation_code' => strtoupper(Str::random(6)),
             'photo_path' => null,
             'master_price_min' => null,
             'master_price_max' => null,
@@ -149,9 +155,40 @@ class BookingController extends Controller
             $appointment->forceFill(['photo_path' => $path])->save();
         }
 
+        /*
+         * Confirmation email.
+         *
+         * The appointment is ALREADY committed above and stays that way whatever
+         * happens here: a broken mail channel must never lose a booking. The only
+         * thing that changes is what the client is told.
+         */
+        $confirmationEmail = trim((string) Setting::get('confirmation_email'));
+        $mailFailed = false;
+
+        if ($confirmationEmail === '') {
+            // No address configured: nothing to send, and the admin has to fix it.
+            $mailFailed = true;
+        } else {
+            try {
+                Mail::to($confirmationEmail)
+                    ->send(new AppointmentConfirmationMail($appointment->loadMissing(['client', 'master.user', 'service'])));
+            } catch (Throwable $exception) {
+                report($exception);
+                $mailFailed = true;
+            }
+        }
+
+        if ($mailFailed) {
+            return redirect()
+                ->route('cabinet.index')
+                ->with('warning', 'Заявка сохранена, но письмо с кодом не удалось отправить. Свяжитесь с барбершопом по телефону: '
+                    .(string) Setting::get('phone')
+                    .'. Мастер также увидит заявку в панели и подтвердит её вручную.');
+        }
+
         return redirect()
             ->route('cabinet.index')
-            ->with('success', 'Заявка отправлена! Мастер подтвердит запись и назовёт точную стоимость.');
+            ->with('success', 'Заявка отправлена! Мастер подтвердит запись и назовёт стоимость. Код подтверждения отправлен на '.$confirmationEmail);
     }
 
     /**

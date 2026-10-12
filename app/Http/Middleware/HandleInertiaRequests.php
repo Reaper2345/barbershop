@@ -57,6 +57,13 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                /*
+                 * A third tone, for "it worked, but something needs your
+                 * attention" — e.g. the booking was saved while the confirmation
+                 * email could not be sent. The layout renders it differently from
+                 * `success` (gold, alert icon, longer timeout).
+                 */
+                'warning' => fn () => $request->session()->get('warning'),
                 'status' => fn () => $request->session()->get('status'),
             ],
 

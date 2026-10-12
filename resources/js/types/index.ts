@@ -230,6 +230,11 @@ export type { PageContent as Page };
 export interface FlashMessages {
     success: string | null;
     error: string | null;
+    /**
+     * "Saved, but read this" tone — e.g. the booking was created while the
+     * confirmation email could not be sent. Rendered in gold with an alert icon.
+     */
+    warning: string | null;
     status: string | null;
 }
 

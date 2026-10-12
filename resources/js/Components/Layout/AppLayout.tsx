@@ -68,10 +68,20 @@ function FlashMessages() {
     const { flash } = usePage<SharedProps>().props;
     const [dismissed, setDismissed] = useState<string[]>([]);
 
+    type Tone = 'success' | 'error' | 'warning';
+
     const messages = [
-        flash.success !== null ? { key: `success-${flash.success}`, tone: 'success' as const, text: flash.success } : null,
-        flash.error !== null ? { key: `error-${flash.error}`, tone: 'error' as const, text: flash.error } : null,
-    ].filter((message): message is { key: string; tone: 'success' | 'error'; text: string } => message !== null);
+        flash.success !== null ? { key: `success-${flash.success}`, tone: 'success' as Tone, text: flash.success } : null,
+        /*
+         * `warning`: the action succeeded but something needs attention (the
+         * booking was saved while its confirmation email failed). Gold, alert
+         * icon, and it lingers twice as long as the other tones.
+         */
+        flash.warning !== null && flash.warning !== undefined
+            ? { key: `warning-${flash.warning}`, tone: 'warning' as Tone, text: flash.warning }
+            : null,
+        flash.error !== null ? { key: `error-${flash.error}`, tone: 'error' as Tone, text: flash.error } : null,
+    ].filter((message): message is { key: string; tone: Tone; text: string } => message !== null);
 
     const visible = messages.filter((message) => !dismissed.includes(message.key));
 
@@ -80,12 +90,18 @@ function FlashMessages() {
             return;
         }
 
-        const timeout = window.setTimeout(() => {
-            setDismissed((previous) => [...previous, ...visible.map((message) => message.key)]);
-        }, 6000);
+        const hasWarning = visible.some((message) => message.tone === 'warning');
+
+        const timeout = window.setTimeout(
+            () => {
+                setDismissed((previous) => [...previous, ...visible.map((message) => message.key)]);
+            },
+            // 12s for a warning: it names a phone number the client may need.
+            hasWarning ? 12000 : 6000,
+        );
 
         return () => window.clearTimeout(timeout);
-    }, [flash.success, flash.error]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [flash.success, flash.warning, flash.error]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (visible.length === 0) {
         return null;
@@ -102,14 +118,20 @@ function FlashMessages() {
                     key={message.key}
                     className={cn(
                         'pointer-events-auto flex items-start gap-3 rounded-2xl border px-5 py-4 text-sm shadow-xl shadow-black/50 backdrop-blur',
-                        message.tone === 'success'
-                            ? 'border-success/40 bg-success/15 text-text-primary'
-                            : 'border-danger/40 bg-danger/15 text-text-primary',
+                        message.tone === 'success' && 'border-success/40 bg-success/15 text-text-primary',
+                        message.tone === 'warning' && 'border-accent/60 bg-accent/15 text-text-primary',
+                        message.tone === 'error' && 'border-danger/40 bg-danger/15 text-text-primary',
                     )}
                 >
-                    {message.tone === 'success' ? (
+                    {message.tone === 'success' && (
                         <CheckCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    ) : (
+                    )}
+
+                    {message.tone === 'warning' && (
+                        <AlertIcon className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    )}
+
+                    {message.tone === 'error' && (
                         <AlertIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
                     )}
 

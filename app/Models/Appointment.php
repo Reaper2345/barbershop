@@ -44,6 +44,7 @@ class Appointment extends Model
         'starts_at',
         'ends_at',
         'status',
+        'confirmation_code',
         'client_comment',
         'photo_path',
         'master_price_min',
