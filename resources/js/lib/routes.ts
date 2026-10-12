@@ -261,14 +261,16 @@ export interface NavItem {
 
 /**
  * Public header/footer navigation, in the order the owner asked for:
- * О нас — Услуги — Мастера — Портфолио — Контакты.
+ * О нас — Услуги — Отзывы — Мастера — Портфолио — Контакты.
  *
- * «Главная» is the logo link and «Отзывы» is linked from the home page, the
- * master dashboard and the review form, so neither needs a header slot.
+ * «Отзывы» belongs here: reviews are a core section of the site (the home page
+ * and the master dashboard link to it, but the header must too). «Главная» is
+ * the logo link, so it needs no slot of its own.
  */
 export const primaryNav: NavItem[] = [
     { href: routes.about, label: 'О нас' },
     { href: routes.services, label: 'Услуги' },
+    { href: routes.reviews(), label: 'Отзывы' },
     { href: routes.masters, label: 'Мастера' },
     { href: routes.portfolio(), label: 'Портфолио' },
     { href: routes.contacts, label: 'Контакты' },
