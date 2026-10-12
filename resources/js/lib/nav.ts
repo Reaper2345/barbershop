@@ -31,7 +31,14 @@ export function isPanelItemActive(path: string, href: string, match: string[] = 
         return true;
     }
 
-    if (clean.startsWith(`${href}/`)) {
+    /*
+     * The prefix rule needs at least two segments. `/admin` prefixes every admin
+     * URL, so applying it to the dashboard item lit «Панель управления» up on
+     * every screen alongside the real match.
+     */
+    const segments = href.split('/').filter((part) => part !== '');
+
+    if (segments.length >= 2 && clean.startsWith(`${href}/`)) {
         return true;
     }
 
