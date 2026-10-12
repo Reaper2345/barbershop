@@ -79,9 +79,6 @@ export default function AdminServicesIndex({
             key: 'name',
             header: 'Услуга',
             sortable: true,
-            // The name column takes the slack: with the default distribution it
-            // was ~180px and every title wrapped onto two or three lines.
-            className: 'min-w-[16rem]',
             accessor: (row) => row.name,
             render: (row) => (
                 <span>

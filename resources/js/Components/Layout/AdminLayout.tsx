@@ -164,10 +164,11 @@ export function AdminLayout({
                 {/* Main column */}
                 <div className="flex min-w-0 flex-1 flex-col">
                     <header className="sticky top-0 z-30 border-b border-border bg-bg-primary/95 backdrop-blur">
-                        {/* Same horizontal steps as <main>, so the breadcrumb
-                            lines up with the page heading instead of sitting
-                            8px to its left at lg and up. */}
-                        <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
+                        {/* Same horizontal steps AND the same max width as
+                            <main>, so the breadcrumb sits exactly above the page
+                            heading at every viewport — the content is centred
+                            once the column is wider than the cap. */}
+                        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
                             <button
                                 type="button"
                                 onClick={() => setSidebarOpen(true)}
@@ -257,7 +258,12 @@ export function AdminLayout({
                     </header>
 
                     <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
-                        <div className="mx-auto w-full max-w-6xl">
+                        {/*
+                         * max-w-7xl rather than 6xl: the admin tables (services,
+                         * appointments) were cramped at 1152px on a large screen,
+                         * and the extra 128px goes straight to the data columns.
+                         */}
+                        <div className="mx-auto w-full max-w-7xl">
                             <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                                 <div>
                                     <h1 className="font-display text-3xl font-semibold tracking-tight text-text-primary">
