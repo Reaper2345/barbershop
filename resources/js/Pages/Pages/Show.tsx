@@ -96,7 +96,7 @@ export default function PageShow({ page }: PageShowProps) {
             <section className="section">
                 <div className="container-page">
                     {isContacts ? (
-                        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-16">
+                        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
                             {/* Page body */}
                             <article
                                 className="prose-barber"

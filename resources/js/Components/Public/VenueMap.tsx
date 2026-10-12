@@ -284,7 +284,7 @@ export function VenueMap({
         return (
             <div
                 className={[
-                    'relative flex min-h-[18rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-bg-elevated p-8 text-center',
+                    'relative flex min-h-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-bg-elevated p-8 text-center',
                     className ?? '',
                 ].join(' ')}
             >
@@ -317,25 +317,34 @@ export function VenueMap({
         `&layer=mapnik&marker=${lat}%2C${lng}`;
 
     return (
-        <div className={['relative', className ?? ''].join(' ')}>
+        /*
+         * `flex h-full flex-col`: the map sits in a grid cell that the grid
+         * stretches to the row height (the contact list beside it is taller), so
+         * the wrapper has to fill that cell and the map has to fill the wrapper.
+         * A fixed height here (it used to be h-[18rem]) left ~45px of dead space
+         * beside the contact block on every large screen.
+         */
+        <div className={['flex h-full flex-col', className ?? ''].join(' ')}>
             {useYandex ? (
                 // Key configured: render (or keep) the v3 target. While the
                 // script loads the container is simply empty, which is why the
                 // border/background are already painted.
                 <div
                     ref={containerRef}
-                    className="min-h-[18rem] w-full overflow-hidden rounded-2xl border border-border bg-bg-elevated [touch-action:pan-y]"
+                    className="h-full min-h-[20rem] w-full flex-1 overflow-hidden rounded-2xl border border-border bg-bg-elevated [touch-action:pan-y]"
                     role="region"
                     aria-label={address === null ? 'Карта' : `Карта: ${address}`}
                 />
             ) : (
-                <div className="relative overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+                <div className="relative h-full min-h-[20rem] flex-1 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
                     <iframe
                         title={address === null ? 'Карта' : `Карта: ${address}`}
                         src={embedSrc}
                         loading="lazy"
                         className={[
-                            'block h-[18rem] w-full border-0',
+                            // `h-full`: fills the stretched cell on lg+, with the
+                            // 20rem floor keeping it usable once it stacks.
+                            'block h-full min-h-[20rem] w-full border-0',
                             iframeActive ? '' : 'pointer-events-none',
                         ].join(' ')}
                     />
