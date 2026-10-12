@@ -157,7 +157,13 @@ export default function AdminServicesIndex({
             key: 'actions',
             header: PANEL.common.actions,
             align: 'right',
-            // Bounded so the two buttons stop eating a quarter of the table.
+            /*
+             * The width hint has to go on the HEADER cell: the table lays out
+             * with `table-layout: auto`, where a width on a body cell is only a
+             * hint, so the column kept absorbing ~277px. Capping it hands the
+             * slack to «Услуга», which no longer wraps mid-title.
+             */
+            headerClassName: 'w-[13rem]',
             className: 'w-[13rem] whitespace-nowrap',
             render: (row) => (
                 <div className="flex items-center justify-end gap-2">
