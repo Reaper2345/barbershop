@@ -744,8 +744,10 @@ export default function BookingCreate({
                         {/* Sticky recap. Sticky from lg (not xl): the summary is
                             the only thing the visitor cross-checks while
                             scrolling a long step, and lg is where the two-column
-                            wizard layout starts. */}
-                        <aside className="lg:sticky lg:top-28 lg:self-start">
+                            wizard layout starts. `top-60`, not `top-28`: the
+                            wizard's sticky progress bar (top-20, 147px tall)
+                            otherwise covers the panel's first 115px. */}
+                        <aside className="lg:sticky lg:top-60 lg:self-start">
                             <p className="mb-3 text-xs uppercase tracking-wider text-text-secondary">
                                 {BOOKING_COPY.summary}
                             </p>
