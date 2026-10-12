@@ -54,6 +54,12 @@ export default function MasterDashboard({
 }: MasterDashboardProps) {
     const { auth, siteSettings } = usePage<SharedProps>().props;
     const masterName = auth.user?.name ?? 'мастер';
+    /*
+     * "Здравствуйте, Иван Соколов" read oddly and, at 30px, pushed the two
+     * header buttons onto a second line below 1280. A greeting takes the first
+     * name; the full name is right there in the top bar.
+     */
+    const greetingName = masterName.split(' ')[0] ?? masterName;
 
     const [sort, setSort] = useState<string | null>(null);
     const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
@@ -180,7 +186,7 @@ export default function MasterDashboard({
 
     return (
         <AdminLayout
-            title={`Здравствуйте, ${masterName}`}
+            title={`Здравствуйте, ${greetingName}`}
             subtitle={MASTER_COPY.dashboardSubtitle}
             nav={masterNav}
             breadcrumbs={[{ label: 'Кабинет мастера' }, { label: 'Обзор' }]}

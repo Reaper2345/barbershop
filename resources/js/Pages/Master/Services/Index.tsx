@@ -174,7 +174,10 @@ export default function MasterServices({ services = [] }: MasterServicesProps) {
                                             !service.is_active && 'bg-bg-secondary/40',
                                         )}
                                     >
-                                        <th scope="row" className="px-4 py-3 text-left font-normal">
+                                        <th
+                                            scope="row"
+                                            className="min-w-[15rem] px-4 py-3 text-left font-normal"
+                                        >
                                             <span className="block text-text-primary">
                                                 {service.name}
                                             </span>
