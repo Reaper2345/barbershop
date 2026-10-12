@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/lib/icons';
 import { cn } from '@/lib/format';
 
@@ -34,7 +34,7 @@ export interface CarouselProps {
 const DEFAULT_SLIDE_CLASS =
     'w-full md:w-[calc(50%_-_0.75rem)] xl:w-[calc(33.333%_-_1rem)]';
 
-/** Slide width plus the gap: the distance one arrow press must travel. */
+/** Slide width plus the gap: the distance one step of the track travels. */
 function slideStep(track: HTMLUListElement): number {
     const first = track.firstElementChild as HTMLElement | null;
 
@@ -47,6 +47,21 @@ function slideStep(track: HTMLUListElement): number {
     return first.offsetWidth + gap;
 }
 
+/** How many slides currently fit in the track (1 at least). */
+function visibleSlides(track: HTMLUListElement): number {
+    const step = slideStep(track);
+
+    if (step <= 0) {
+        return 1;
+    }
+
+    const gap = Number.parseFloat(window.getComputedStyle(track).columnGap) || 0;
+    // The last slide needs no trailing gap, hence the `+ gap` on the width.
+    const fit = Math.round((track.clientWidth + gap) / step);
+
+    return Math.max(1, fit);
+}
+
 export function Carousel({
     children,
     slideClassName = DEFAULT_SLIDE_CLASS,
@@ -56,21 +71,43 @@ export function Carousel({
     className,
 }: CarouselProps) {
     const trackRef = useRef<HTMLUListElement>(null);
-    const [activeIndex, setActiveIndex] = useState(0);
+    /*
+     * `index` is the leftmost visible slide, so the reachable range is
+     * 0 … total - visible. Tracking it (rather than only reading scrollLeft)
+     * is what lets the arrows know they have hit a bound: with `scrollBy` the
+     * track simply stopped at the end while the "next" button stayed enabled.
+     */
+    const [index, setIndex] = useState(0);
+    const [visible, setVisible] = useState(1);
 
-    const scrollByCard = (direction: -1 | 1): void => {
+    const total = children.length;
+    const maxIndex = Math.max(0, total - visible);
+    const pageCount = Math.max(1, Math.ceil(total / visible));
+    const hasPrev = index > 0;
+    const hasNext = index < maxIndex;
+    // The last page can start before `pageCount * visible` on a ragged end,
+    // so it is matched by the bound rather than by division.
+    const activePage = index >= maxIndex ? pageCount - 1 : Math.round(index / visible);
+
+    // Read by the resize handler, which must not depend on stale state.
+    const indexRef = useRef(0);
+    indexRef.current = index;
+
+    /** Moves the track to a slide index, clamped to the reachable range. */
+    const goTo = (target: number): void => {
         const track = trackRef.current;
 
         if (track === null) {
             return;
         }
 
-        // Advancing by the slide width *plus the gap* lands exactly on the
-        // neighbouring snap point; using the width alone drifted out of sync
-        // with the dots after the second click.
-        track.scrollBy({ left: direction * slideStep(track), behavior: 'smooth' });
+        const clamped = Math.max(0, Math.min(target, maxIndex));
+
+        setIndex(clamped);
+        track.scrollTo({ left: clamped * slideStep(track), behavior: 'smooth' });
     };
 
+    /** Keeps the arrows/dots honest when the user swipes or scrolls natively. */
     const handleScroll = (): void => {
         const track = trackRef.current;
 
@@ -78,21 +115,39 @@ export function Carousel({
             return;
         }
 
-        const step = slideStep(track);
-        const index = Math.round(track.scrollLeft / step);
+        const raw = Math.round(track.scrollLeft / slideStep(track));
 
-        setActiveIndex(Math.max(0, Math.min(index, children.length - 1)));
+        setIndex(Math.max(0, Math.min(raw, maxIndex)));
     };
 
-    const scrollToIndex = (index: number): void => {
+    /*
+     * The number of visible slides changes with the breakpoint, which changes
+     * maxIndex — so it is re-measured on resize and the position re-clamped,
+     * otherwise a viewport change would leave the arrows in the wrong state.
+     */
+    useEffect(() => {
         const track = trackRef.current;
 
-        if (track === null || track === undefined) {
+        if (track === null) {
             return;
         }
 
-        track.scrollTo({ left: index * slideStep(track), behavior: 'smooth' });
-    };
+        const sync = (): void => {
+            const fit = visibleSlides(track);
+            const max = Math.max(0, total - fit);
+            const clamped = Math.min(indexRef.current, max);
+
+            setVisible(fit);
+            setIndex(clamped);
+            // No animation here: this only realigns after a layout change.
+            track.scrollTo({ left: clamped * slideStep(track) });
+        };
+
+        sync();
+        window.addEventListener('resize', sync);
+
+        return () => window.removeEventListener('resize', sync);
+    }, [total]);
 
     return (
         <div className={className}>
@@ -114,18 +169,19 @@ export function Carousel({
 
             {children.length > 1 && (
                 <div className="mt-8 flex items-center justify-between gap-4">
-                    {/* Dots */}
+                    {/* Dots — one per page of visible slides, so they advance in
+                        the same units as the arrows. */}
                     <ul className="flex flex-wrap items-center gap-2">
-                        {children.map((_, index) => (
-                            <li key={index}>
+                        {Array.from({ length: pageCount }, (_, page) => (
+                            <li key={page}>
                                 <button
                                     type="button"
-                                    onClick={() => scrollToIndex(index)}
-                                    aria-label={`Отзыв ${index + 1}`}
-                                    aria-current={index === activeIndex ? 'true' : undefined}
+                                    onClick={() => goTo(page * visible)}
+                                    aria-label={`Страница ${page + 1}`}
+                                    aria-current={page === activePage ? 'true' : undefined}
                                     className={cn(
                                         'h-1.5 rounded-full transition-all duration-300 focus-visible:ring-2 focus-visible:ring-accent',
-                                        index === activeIndex
+                                        page === activePage
                                             ? 'w-8 bg-accent'
                                             : 'w-3 bg-border hover:bg-text-secondary',
                                     )}
@@ -136,14 +192,18 @@ export function Carousel({
 
                     {/* Arrows */}
                     <div className="flex items-center gap-2">
-                        <ArrowButton label={previousLabel} onClick={() => scrollByCard(-1)} disabled={activeIndex === 0}>
+                        <ArrowButton
+                            label={previousLabel}
+                            onClick={() => goTo(index - visible)}
+                            disabled={!hasPrev}
+                        >
                             <ChevronLeftIcon className="h-5 w-5" />
                         </ArrowButton>
 
                         <ArrowButton
                             label={nextLabel}
-                            onClick={() => scrollByCard(1)}
-                            disabled={activeIndex >= children.length - 1}
+                            onClick={() => goTo(index + visible)}
+                            disabled={!hasNext}
                         >
                             <ChevronRightIcon className="h-5 w-5" />
                         </ArrowButton>
@@ -170,11 +230,15 @@ function ArrowButton({
             type="button"
             onClick={onClick}
             disabled={disabled}
+            // Announced to assistive tech even where `disabled` is not honoured.
+            aria-disabled={disabled || undefined}
             aria-label={label}
             className={cn(
                 'flex h-11 w-11 items-center justify-center rounded-full border border-border text-text-primary',
                 'transition-all duration-300 hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-accent',
-                'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-primary',
+                // Bound reached: visibly and actually inert.
+                disabled &&
+                    'pointer-events-none cursor-not-allowed opacity-40 hover:border-border hover:text-text-primary',
             )}
         >
             {children}
