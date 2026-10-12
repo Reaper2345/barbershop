@@ -11,20 +11,26 @@ import { MasterCard } from '@/Components/Public/MasterCard';
 import { ReviewCard } from '@/Components/Public/ReviewCard';
 import { FeatureCard } from '@/Components/Public/FeatureCard';
 import { ContactRow } from '@/Components/Public/ContactRow';
-import { CategoryIcon, PhoneIcon, MapPinIcon, ClockIcon, ArrowRightIcon, ScissorsIcon, QuoteIcon } from '@/lib/icons';
+import { CategoryIcon, PhoneIcon, MapPinIcon, ClockIcon, ArrowRightIcon, ScissorsIcon, QuoteIcon, ImagesIcon } from '@/lib/icons';
 import { COPY, CONTACT_COPY, FEATURES, type Feature } from '@/lib/content';
 import { routes } from '@/lib/routes';
 import { formatPriceRange, telHref } from '@/lib/format';
-import type { Category, Master, Review, SharedProps } from '@/types';
+import { portfolioPhoto, PORTFOLIO_FALLBACK } from '@/lib/image';
+import { Img } from '@/Components/UI/Img';
+import type { Category, Master, Review, PortfolioItemRow, SharedProps } from '@/types';
 
 /*
 |--------------------------------------------------------------------------
 | Home — GET /
 |--------------------------------------------------------------------------
 | Props come from HomeController@index:
-|   categories — ordered categories with their active services (for prices)
-|   masters    — 3 highest-rated active masters, withCount('reviews')
-|   reviews    — 6 latest approved reviews
+|   categories     — ordered categories with their active services (for prices)
+|   masters        — 3 highest-rated active masters, withCount('reviews')
+|   reviews        — 6 latest approved reviews
+|   portfolioItems — 6 latest published showcase works
+|
+| Section order is deliberate and follows the client's review:
+|   Hero → О нас → Услуги → Мастера → Портфолио → Почему мы → Отзывы → Контакты
 |
 | `features` is optional: the controller does not send it yet, so the block
 | falls back to the settings-aware defaults in lib/content.ts.
@@ -35,13 +41,22 @@ export interface HomeProps {
     masters?: Master[];
     reviews?: Review[];
     features?: Feature[];
+    portfolioItems?: PortfolioItemRow[];
 }
+
+/** Quiet fact list in the "О нас" block; every number comes from about_text. */
+const ABOUT_FACTS = [
+    { value: '2016', label: 'год основания' },
+    { value: '3', label: 'барбера в команде' },
+    { value: '25+', label: 'лет суммарного опыта' },
+] as const;
 
 export default function Home({
     categories = [],
     masters = [],
     reviews = [],
     features,
+    portfolioItems = [],
 }: HomeProps) {
     const { siteSettings } = usePage<SharedProps>().props;
 
@@ -54,6 +69,8 @@ export default function Home({
     const address = siteSettings.address ?? null;
     const phone = siteSettings.phone ?? null;
     const workHours = siteSettings.work_hours ?? null;
+    // "О нас" block: the same text the admin edits on the settings screen.
+    const aboutText = siteSettings.about_text ?? null;
 
     // Settings override each default feature when the keys exist.
     const resolvedFeatures: Feature[] = (features ?? FEATURES).map((feature) => ({
@@ -121,9 +138,53 @@ export default function Home({
             </section>
 
             {/* ---------------------------------------------------------------
+                О нас — first block under the hero (client-requested order)
+            --------------------------------------------------------------- */}
+            <section className="section border-t border-border" aria-labelledby="about-heading">
+                <div className="container-page">
+                    <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16">
+                        <div>
+                            <SectionHeading
+                                id="about-heading"
+                                eyebrow={COPY.about.eyebrow}
+                                title={COPY.about.title}
+                            />
+
+                            <p className="mt-6 max-w-2xl text-base leading-relaxed text-text-secondary">
+                                {aboutText ?? COPY.about.fallback}
+                            </p>
+
+                            <div className="mt-8">
+                                <Button href={routes.about} variant="ghost">
+                                    {COPY.about.cta}
+                                    <ArrowRightIcon className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Numbers already stated by the settings text — presented
+                            as a quiet fact list so the block is not a wall of text. */}
+                        <ul className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                            {ABOUT_FACTS.map((fact) => (
+                                <li
+                                    key={fact.label}
+                                    className="rounded-2xl border border-border bg-bg-elevated px-6 py-5"
+                                >
+                                    <p className="font-display text-3xl font-semibold text-accent">
+                                        {fact.value}
+                                    </p>
+                                    <p className="mt-1 text-sm text-text-secondary">{fact.label}</p>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* ---------------------------------------------------------------
                 Услуги — 4 categories
             --------------------------------------------------------------- */}
-            <section className="section border-t border-border" aria-labelledby="services-heading">
+            <section className="section border-t border-border bg-bg-secondary" aria-labelledby="services-heading">
                 <div className="container-page">
                     <SectionHeading
                         id="services-heading"
@@ -163,7 +224,7 @@ export default function Home({
             {/* ---------------------------------------------------------------
                 Мастера — 3 cards
             --------------------------------------------------------------- */}
-            <section className="section border-t border-border bg-bg-secondary" aria-labelledby="masters-heading">
+            <section className="section border-t border-border" aria-labelledby="masters-heading">
                 <div className="container-page">
                     <SectionHeading
                         id="masters-heading"
@@ -193,6 +254,46 @@ export default function Home({
                             {masters.map((master) => (
                                 <li key={master.id} className="flex">
                                     <MasterCard master={master} className="w-full" />
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </section>
+
+            {/* ---------------------------------------------------------------
+                Портфолио — latest published works
+            --------------------------------------------------------------- */}
+            <section className="section border-t border-border bg-bg-secondary" aria-labelledby="portfolio-heading">
+                <div className="container-page">
+                    <SectionHeading
+                        id="portfolio-heading"
+                        eyebrow={COPY.portfolio.eyebrow}
+                        title={COPY.portfolio.title}
+                        subtitle={COPY.portfolio.subtitle}
+                        action={
+                            <Link
+                                href={routes.portfolio()}
+                                className="inline-flex items-center gap-2 text-sm font-medium text-accent transition-all duration-300 hover:text-accent-hover"
+                            >
+                                {COPY.portfolio.cta}
+                                <ArrowRightIcon className="h-4 w-4" />
+                            </Link>
+                        }
+                    />
+
+                    {portfolioItems.length === 0 ? (
+                        <EmptyState
+                            className="mt-12"
+                            icon={<ImagesIcon />}
+                            title={COPY.portfolio.empty}
+                            description="Мастера добавляют работы после каждого визита."
+                        />
+                    ) : (
+                        <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            {portfolioItems.map((item) => (
+                                <li key={item.id}>
+                                    <HomePortfolioCard item={item} />
                                 </li>
                             ))}
                         </ul>
@@ -366,6 +467,50 @@ export default function Home({
 | Local pieces
 |--------------------------------------------------------------------------
 */
+
+/**
+ * Home-page showcase tile. Opens the full wall rather than a lightbox: the
+ * home block is a teaser, and the wall already has zoom + master filtering.
+ */
+function HomePortfolioCard({ item }: { item: PortfolioItemRow }) {
+    const masterName = item.master?.user?.name ?? item.master?.name ?? null;
+    const title = item.title ?? 'Работа мастера';
+
+    return (
+        <Link
+            href={routes.portfolio()}
+            className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent"
+        >
+            <span className="block aspect-[4/3] w-full overflow-hidden">
+                <Img
+                    src={portfolioPhoto(item.photo_path)}
+                    fallbackSrc={PORTFOLIO_FALLBACK}
+                    alt={title}
+                    className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                    wrapperClassName="h-full w-full"
+                />
+            </span>
+
+            <span className="flex flex-1 flex-col p-5">
+                <span className="font-display text-lg font-semibold text-text-primary">
+                    {title}
+                </span>
+
+                {item.description !== null && item.description !== '' && (
+                    <span className="mt-2 line-clamp-2 text-sm leading-relaxed text-text-secondary">
+                        {item.description}
+                    </span>
+                )}
+
+                {masterName !== null && (
+                    <span className="mt-auto pt-4 text-xs uppercase tracking-wider text-accent">
+                        {masterName}
+                    </span>
+                )}
+            </span>
+        </Link>
+    );
+}
 
 /** Category card: icon, name, service count and the overall price range. */
 function CategoryCard({ category }: { category: Category }) {

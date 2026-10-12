@@ -28,6 +28,14 @@ export const routes = {
     about: '/about',
     contacts: '/contacts',
 
+    /**
+     * CMS pages served by the /{slug} catch-all. Only the slugs the app links
+     * to on its own are listed; anything else is built ad hoc.
+     */
+    pages: {
+        privacy: '/privacy',
+    },
+
     booking: (params?: { master?: number | string; service?: number | string }): string => {
         const query = new URLSearchParams();
 
@@ -200,6 +208,8 @@ export const routes = {
         pagesCreate: '/admin/pages/create',
         pageEdit: (id: number | string): string => `/admin/pages/${id}/edit`,
         page: (id: number | string): string => `/admin/pages/${id}`,
+        /** SEO-only PATCH used by the modal in the pages list. */
+        pageSeo: (slug: number | string): string => `/admin/pages/${slug}/seo`,
 
         users: (params?: { role?: string; search?: string }): string => {
             const query = new URLSearchParams();

@@ -66,6 +66,14 @@ export const FEATURES: Feature[] = [
 
 /** Section headings and calls to action used across the public pages. */
 export const COPY = {
+    about: {
+        eyebrow: 'О нас',
+        title: 'Барбершоп «Бритва»',
+        cta: 'Подробнее',
+        // Used only when the `about_text` setting is empty.
+        fallback:
+            '«Бритва» — барбершоп для мужчин, которые ценят своё время и внимание к деталям. Мы открылись в 2016 году и сегодня это команда из трёх барберов с суммарным опытом более двадцати пяти лет. Работаем без спешки: на каждого клиента заложено полноценное время.',
+    },
     services: {
         eyebrow: 'Услуги',
         title: 'Что мы делаем',
@@ -79,6 +87,13 @@ export const COPY = {
         subtitle: 'Три барбера, каждый со своей специализацией — от классических стрижек до королевского бритья.',
         cta: 'Все мастера',
         empty: 'Мастера скоро появятся',
+    },
+    portfolio: {
+        eyebrow: 'Портфолио',
+        title: 'Наши работы',
+        subtitle: 'Стрижки, бороды и королевское бритьё — то, что мастера делают каждый день.',
+        cta: 'Смотреть всё портфолио',
+        empty: 'Работы скоро появятся',
     },
     features: {
         eyebrow: 'Почему мы',
@@ -211,7 +226,13 @@ export const BOOKING_COPY = {
     commentLabel: 'Комментарий для мастера',
     commentPlaceholder: 'Пожелания по стрижке, особенности, удобное время звонка',
     commentHint: 'Необязательно. До 2000 символов.',
+    /*
+     * The consent line is split so "обработкой персональных данных" can be a
+     * real link to the policy page without breaking the sentence.
+     */
     agree: 'Согласен с условиями записи и обработкой персональных данных',
+    agreePrefix: 'Согласен с условиями записи и ',
+    agreeLink: 'обработкой персональных данных',
     agreeError: 'Подтвердите согласие с условиями.',
     agreeRequired: 'Нужно согласие с условиями',
     submit: 'Отправить заявку',

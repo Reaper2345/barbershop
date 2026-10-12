@@ -25,7 +25,6 @@ export interface MobileMenuProps {
     onClose: () => void;
     settings: SharedProps['siteSettings'];
     user: SharedProps['auth']['user'];
-    onCallback: () => void;
 }
 
 export function MobileMenu({
@@ -33,7 +32,6 @@ export function MobileMenu({
     onClose,
     settings,
     user,
-    onCallback,
 }: MobileMenuProps) {
     // Reactive: updates on every Inertia visit.
     const url = String(usePage<SharedProps>().url ?? '/');
@@ -187,17 +185,6 @@ export function MobileMenu({
                         onClick={onClose}
                     >
                         Записаться
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        fullWidth
-                        onClick={() => {
-                            onClose();
-                            onCallback();
-                        }}
-                    >
-                        Заказать звонок
                     </Button>
 
                     <div className="flex items-center justify-center gap-4 pt-1 text-sm">

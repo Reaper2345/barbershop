@@ -52,6 +52,40 @@ class PageController extends Controller
             ->with('success', 'Страница обновлена.');
     }
 
+    /**
+     * SEO-only update, submitted from the modal in the pages list.
+     *
+     * Separate from update() on purpose: the modal must not have to re-send the
+     * page body, and clearing a field has to be possible (empty string => null).
+     */
+    public function updateSeo(Request $request, Page $page): RedirectResponse
+    {
+        $validated = $request->validate([
+            'meta_title' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string', 'max:500'],
+        ], [], [
+            'meta_title' => 'meta title',
+            'meta_description' => 'meta description',
+        ]);
+
+        $page->update([
+            'meta_title' => $this->nullableString($validated['meta_title'] ?? null),
+            'meta_description' => $this->nullableString($validated['meta_description'] ?? null),
+        ]);
+
+        return redirect()
+            ->route('admin.pages.index')
+            ->with('success', "SEO страницы «{$page->title}» сохранено.");
+    }
+
+    /** Trims a submitted value and turns a blank one into null. */
+    private function nullableString(?string $value): ?string
+    {
+        $trimmed = trim((string) $value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
     public function destroy(Page $page): RedirectResponse
     {
         $page->delete();

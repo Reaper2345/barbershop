@@ -242,6 +242,12 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/pages', [AdminPageController::class, 'index'])->name('pages.index');
         Route::get('/pages/create', [AdminPageController::class, 'create'])->name('pages.create');
         Route::post('/pages', [AdminPageController::class, 'store'])->name('pages.store');
+        /*
+         * SEO-only update, driven by a modal in the pages list. Registered
+         * before the resource-style routes so it cannot be shadowed by
+         * /pages/{page} handling.
+         */
+        Route::patch('/pages/{page}/seo', [AdminPageController::class, 'updateSeo'])->name('pages.seo');
         Route::get('/pages/{page}/edit', [AdminPageController::class, 'edit'])->name('pages.edit');
         Route::put('/pages/{page}', [AdminPageController::class, 'update'])->name('pages.update');
         Route::delete('/pages/{page}', [AdminPageController::class, 'destroy'])->name('pages.destroy');

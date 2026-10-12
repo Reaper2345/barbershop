@@ -183,6 +183,19 @@ export function Header() {
                             Записаться
                         </Button>
 
+                        {/*
+                         * Callback CTA. It is a header action that opens the
+                         * modal — not a navigation link and not a sidebar item.
+                         */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={openCallback}
+                            className="hidden sm:inline-flex"
+                        >
+                            Заказать звонок
+                        </Button>
+
                         {/* Account dropdown */}
                         <div className="relative hidden lg:block" ref={accountRef}>
                             <button
@@ -274,7 +287,6 @@ export function Header() {
                 onClose={() => setMobileOpen(false)}
                 settings={siteSettings}
                 user={user}
-                onCallback={openCallback}
             />
         </>
     );

@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
+import { SeoModal } from '@/Components/Admin/SeoModal';
 import { Button } from '@/Components/UI/Button';
 import { Badge } from '@/Components/UI/Badge';
 import { buildAdminNav } from '@/lib/nav';
@@ -44,6 +45,7 @@ export default function AdminPagesIndex({
     pages_links,
 }: AdminPagesIndexProps) {
     const [deleting, setDeleting] = useState<AdminPageRow | null>(null);
+    const [seoPage, setSeoPage] = useState<AdminPageRow | null>(null);
     const [processing, setProcessing] = useState(false);
 
     const remove = (): void => {
@@ -131,6 +133,20 @@ export default function AdminPagesIndex({
             ),
         },
         {
+            key: 'seo',
+            header: 'SEO',
+            render: (row) =>
+                row.meta_title !== null && row.meta_title !== undefined && row.meta_title !== '' ? (
+                    <Badge tone="emerald" dot>
+                        Заполнено
+                    </Badge>
+                ) : (
+                    <Badge tone="neutral" dot>
+                        По умолчанию
+                    </Badge>
+                ),
+        },
+        {
             key: 'actions',
             header: PANEL.common.actions,
             align: 'right',
@@ -138,6 +154,11 @@ export default function AdminPagesIndex({
                 <div className="flex items-center justify-end gap-2">
                     <Button href={routes.admin.pageEdit(row.slug)} variant="ghost" size="sm">
                         {PANEL.common.edit}
+                    </Button>
+
+                    {/* SEO lives in a modal: two fields, no page reload. */}
+                    <Button variant="ghost" size="sm" onClick={() => setSeoPage(row)}>
+                        SEO
                     </Button>
 
                     <Button
@@ -192,6 +213,8 @@ export default function AdminPagesIndex({
                 onConfirm={remove}
                 onClose={() => setDeleting(null)}
             />
+
+            <SeoModal open={seoPage !== null} page={seoPage} onClose={() => setSeoPage(null)} />
         </AdminLayout>
     );
 }

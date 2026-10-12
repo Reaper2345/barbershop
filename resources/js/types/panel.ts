@@ -215,6 +215,9 @@ export interface AdminPageRow {
     id: number;
     slug: string;
     title: string;
+    /** SEO overrides; null means "fall back to the title / site setting". */
+    meta_title?: string | null;
+    meta_description?: string | null;
     content: string;
     is_published: boolean;
     updated_at?: string;

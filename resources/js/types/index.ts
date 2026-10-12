@@ -208,6 +208,9 @@ export interface PageContent {
     id: number;
     slug: string;
     title: string;
+    /** Per-page SEO overrides; null/empty means "use the fallback". */
+    meta_title?: string | null;
+    meta_description?: string | null;
     /** HTML authored in the admin panel; sanitised before rendering. */
     content: string;
     is_published: boolean;

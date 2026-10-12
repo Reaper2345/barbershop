@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $slug
  * @property string $title
+ * @property string|null $meta_title
+ * @property string|null $meta_description
  * @property string $content
  * @property bool $is_published
  * @property Carbon|null $created_at
@@ -27,6 +29,8 @@ class Page extends Model
     protected $fillable = [
         'slug',
         'title',
+        'meta_title',
+        'meta_description',
         'content',
         'is_published',
     ];

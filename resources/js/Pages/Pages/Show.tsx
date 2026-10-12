@@ -58,8 +58,24 @@ export default function PageShow({ page }: PageShowProps) {
 
     const hasContacts = address !== null || phone !== null || email !== null || workHours !== null;
 
+    /*
+     * Search metadata: a per-page override (edited in the admin modal from
+     * /admin/pages) wins, otherwise fall back to the page title plus the
+     * site-wide description.
+     */
+    const metaTitle =
+        page.meta_title !== null && page.meta_title !== undefined && page.meta_title !== ''
+            ? page.meta_title
+            : page.title;
+    const metaDescription =
+        page.meta_description !== null &&
+        page.meta_description !== undefined &&
+        page.meta_description !== ''
+            ? page.meta_description
+            : `${page.title} — ${siteSettings.site_name ?? 'барбершоп'}`;
+
     return (
-        <AppLayout title={page.title} description={`${page.title} — ${siteSettings.site_name ?? 'барбершоп'}`}>
+        <AppLayout title={metaTitle} description={metaDescription}>
             {/* Page heading */}
             <section className="border-b border-border bg-bg-secondary">
                 <div className="container-page py-16 md:py-20">

@@ -5,6 +5,7 @@ import { Textarea } from '@/Components/UI/Textarea';
 import { Button } from '@/Components/UI/Button';
 import { AlertIcon } from '@/lib/icons';
 import { BOOKING_COPY } from '@/lib/content';
+import { routes } from '@/lib/routes';
 import { formatIsoDateLabel } from '@/lib/date';
 import { cn } from '@/lib/format';
 import type { BookingSlot } from '@/types';
@@ -174,7 +175,24 @@ export function StepConfirm({
                                 onChange={(event) => onAgreedChange(event.target.checked)}
                                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-border bg-bg-secondary text-accent focus-visible:ring-2 focus-visible:ring-accent"
                             />
-                            <span>{BOOKING_COPY.agree}</span>
+                            <span>
+                                {BOOKING_COPY.agreePrefix}
+                                {/*
+                                 * Opens the policy in a new tab. The click is
+                                 * stopped from bubbling: the link sits inside
+                                 * the <label>, and without this a click on it
+                                 * would also flip the checkbox.
+                                 */}
+                                <a
+                                    href={routes.pages.privacy}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(event) => event.stopPropagation()}
+                                    className="text-accent underline underline-offset-2 transition-all duration-300 hover:text-accent-hover"
+                                >
+                                    {BOOKING_COPY.agreeLink}
+                                </a>
+                            </span>
                         </label>
 
                         {agreedError !== undefined && (

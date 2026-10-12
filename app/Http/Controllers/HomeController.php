@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ReviewResource;
 use App\Models\Category;
 use App\Models\Master;
+use App\Models\PortfolioItem;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -47,11 +48,23 @@ class HomeController extends Controller
             ->limit(6)
             ->get();
 
+        /*
+         * Latest published showcase works for the home-page "Портфолио" block.
+         * A short sample only — the full wall lives on /portfolio.
+         */
+        $portfolioItems = PortfolioItem::query()
+            ->published()
+            ->with('master.user')
+            ->latest('created_at')
+            ->limit(6)
+            ->get();
+
         return Inertia::render('Home/Index', [
             'categories' => $categories,
             'masters' => $masters,
             // Resolved, not raw: the card reads review.photo_url / photo_path.
             'reviews' => ReviewResource::collection($reviews)->resolve($request),
+            'portfolioItems' => $portfolioItems,
         ]);
     }
 }
