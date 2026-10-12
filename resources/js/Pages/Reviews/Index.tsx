@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { ReviewCard } from '@/Components/Public/ReviewCard';
+import { ReviewModal } from '@/Components/Public/ReviewModal';
 import { Badge } from '@/Components/UI/Badge';
 import { EmptyState } from '@/Components/UI/EmptyState';
 import { Img } from '@/Components/UI/Img';
@@ -48,6 +49,8 @@ export default function ReviewsIndex({
     filters,
 }: ReviewsIndexProps) {
     const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
+    // Review whose full text is open in the modal (null = closed).
+    const [openReview, setOpenReview] = useState<ReviewLike | null>(null);
     const rows = Array.isArray(reviews) ? reviews : reviews.data;
     const activeMaster = filters?.master ?? null;
     const total = masters.reduce((sum, master) => sum + master.review_count, 0);
@@ -121,6 +124,7 @@ export default function ReviewsIndex({
                                                     review={review}
                                                     showMaster
                                                     onPhotoClick={setLightbox}
+                                                    onOpen={setOpenReview}
                                                     className="h-full"
                                                 />
                                             </li>
@@ -141,6 +145,12 @@ export default function ReviewsIndex({
                 alt={lightbox?.alt ?? ''}
                 caption={lightbox?.caption ?? null}
                 onClose={() => setLightbox(null)}
+            />
+
+            <ReviewModal
+                review={openReview}
+                onClose={() => setOpenReview(null)}
+                onPhotoClick={setLightbox}
             />
         </AppLayout>
     );

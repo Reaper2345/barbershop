@@ -9,6 +9,8 @@ import { Lightbox, type LightboxPhoto } from '@/Components/UI/Lightbox';
 import { SectionHeading } from '@/Components/Public/SectionHeading';
 import { MasterCard } from '@/Components/Public/MasterCard';
 import { ReviewCard } from '@/Components/Public/ReviewCard';
+import { ReviewModal } from '@/Components/Public/ReviewModal';
+import { VenueMap, parseCoordinate } from '@/Components/Public/VenueMap';
 import { FeatureCard } from '@/Components/Public/FeatureCard';
 import { ContactRow } from '@/Components/Public/ContactRow';
 import { CategoryIcon, PhoneIcon, MapPinIcon, ClockIcon, ArrowRightIcon, ScissorsIcon, QuoteIcon, ImagesIcon } from '@/lib/icons';
@@ -17,7 +19,7 @@ import { routes } from '@/lib/routes';
 import { formatPriceRange, telHref } from '@/lib/format';
 import { portfolioPhoto, PORTFOLIO_FALLBACK } from '@/lib/image';
 import { Img } from '@/Components/UI/Img';
-import type { Category, Master, Review, PortfolioItemRow, SharedProps } from '@/types';
+import type { Category, Master, Review, ReviewLike, PortfolioItemRow, SharedProps } from '@/types';
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +73,12 @@ export default function Home({
     const workHours = siteSettings.work_hours ?? null;
     // "О нас" block: the same text the admin edits on the settings screen.
     const aboutText = siteSettings.about_text ?? null;
+    // Map pin, when the coordinates are configured in the admin settings.
+    const mapLat = parseCoordinate(siteSettings.map_lat);
+    const mapLng = parseCoordinate(siteSettings.map_lng);
+
+    // Full-review overlay for the carousel below.
+    const [openReview, setOpenReview] = useState<ReviewLike | null>(null);
 
     // Settings override each default feature when the keys exist.
     const resolvedFeatures: Feature[] = (features ?? FEATURES).map((feature) => ({
@@ -354,6 +362,7 @@ export default function Home({
                                     maxLength={260}
                                     showMaster
                                     onPhotoClick={setLightbox}
+                                    onOpen={setOpenReview}
                                     className="h-full"
                                 />
                             ))}
@@ -419,34 +428,14 @@ export default function Home({
                             </div>
                         </div>
 
-                        {/* Map placeholder: the address is the only data we have,
-                            so the block renders a styled frame instead of an
-                            embedded third-party map. */}
-                        <div className="relative min-h-[18rem] overflow-hidden rounded-2xl border border-border bg-bg-elevated">
-                            <div
-                                className="absolute inset-0 opacity-60"
-                                aria-hidden="true"
-                                style={{
-                                    backgroundImage:
-                                        'linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(180deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
-                                    backgroundSize: '48px 48px',
-                                }}
-                            />
-
-                            <div className="relative flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                                <MapPinIcon className="h-8 w-8 text-accent" />
-
-                                {address !== null && (
-                                    <p className="max-w-xs text-sm font-medium text-text-primary">
-                                        {address}
-                                    </p>
-                                )}
-
-                                <p className="text-xs text-text-secondary">
-                                    {CONTACT_COPY.mapNote}
-                                </p>
-                            </div>
-                        </div>
+                        {/* OpenStreetMap (Leaflet bundled locally). Falls back
+                            to an address panel when map_lat/map_lng are unset. */}
+                        <VenueMap
+                            lat={mapLat}
+                            lng={mapLng}
+                            address={address}
+                            note={CONTACT_COPY.mapNote}
+                        />
                     </div>
                 </div>
             </section>
@@ -457,6 +446,12 @@ export default function Home({
                 alt={lightbox?.alt ?? ''}
                 caption={lightbox?.caption ?? null}
                 onClose={() => setLightbox(null)}
+            />
+
+            <ReviewModal
+                review={openReview}
+                onClose={() => setOpenReview(null)}
+                onPhotoClick={setLightbox}
             />
         </AppLayout>
     );

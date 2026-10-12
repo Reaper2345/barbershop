@@ -44,6 +44,22 @@ class SettingSeeder extends Seeder
             'value' => 'Вт–Сб: 10:00–20:00, Вс и Пн — выходные',
             'group' => 'contacts',
         ],
+        /*
+         * Coordinates of the address above (Покровка 14, стр. 2 — five minutes
+         * from Китай-город). They drive the OpenStreetMap block on the home
+         * page and on /contacts; clearing them falls back to a static panel
+         * with an "Открыть в картах" link.
+         */
+        [
+            'key' => 'map_lat',
+            'value' => '55.756789',
+            'group' => 'contacts',
+        ],
+        [
+            'key' => 'map_lng',
+            'value' => '37.648578',
+            'group' => 'contacts',
+        ],
         [
             'key' => 'hero_title',
             'value' => 'Мужская стрижка, которая держит форму',

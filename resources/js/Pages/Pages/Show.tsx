@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { CallbackForm } from '@/Components/Public/CallbackForm';
 import { ContactRow } from '@/Components/Public/ContactRow';
+import { VenueMap, parseCoordinate } from '@/Components/Public/VenueMap';
 import { Badge } from '@/Components/UI/Badge';
 import { Button } from '@/Components/UI/Button';
 import { EmptyState } from '@/Components/UI/EmptyState';
@@ -51,6 +52,9 @@ export default function PageShow({ page }: PageShowProps) {
     const email = siteSettings.email ?? null;
     const workHours = siteSettings.work_hours ?? null;
     const instagram = siteSettings.instagram ?? null;
+    // Map pin, when the coordinates are configured in the admin settings.
+    const mapLat = parseCoordinate(siteSettings.map_lat);
+    const mapLng = parseCoordinate(siteSettings.map_lng);
 
     const phoneDigits = phone === null ? '' : phone.replace(/[^\d]/g, '');
     const whatsapp = phoneDigits === '' ? null : `https://wa.me/${phoneDigits}`;
@@ -208,32 +212,13 @@ export default function PageShow({ page }: PageShowProps) {
                                     <CallbackForm className="mt-6" />
                                 </div>
 
-                                {/* Map placeholder */}
-                                <div className="relative min-h-[16rem] overflow-hidden rounded-2xl border border-border bg-bg-elevated">
-                                    <div
-                                        className="absolute inset-0 opacity-60"
-                                        aria-hidden="true"
-                                        style={{
-                                            backgroundImage:
-                                                'linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(180deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
-                                            backgroundSize: '48px 48px',
-                                        }}
-                                    />
-
-                                    <div className="relative flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                                        <MapPinIcon className="h-8 w-8 text-accent" />
-
-                                        {address !== null && (
-                                            <p className="max-w-xs text-sm font-medium text-text-primary">
-                                                {address}
-                                            </p>
-                                        )}
-
-                                        <p className="text-xs text-text-secondary">
-                                            {CONTACT_COPY.mapNote}
-                                        </p>
-                                    </div>
-                                </div>
+                                {/* OpenStreetMap (Leaflet bundled locally). */}
+                                <VenueMap
+                                    lat={mapLat}
+                                    lng={mapLng}
+                                    address={address}
+                                    note={CONTACT_COPY.mapNote}
+                                />
                             </div>
                         </div>
                     ) : (

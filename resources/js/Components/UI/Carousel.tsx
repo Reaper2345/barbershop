@@ -25,9 +25,31 @@ export interface CarouselProps {
     className?: string;
 }
 
+/*
+ * The track uses `gap-6` (1.5rem), so a plain `w-1/3` slide overshoots: three
+ * of them plus two gaps need 1281px of a 1232px track and the third card was
+ * sliced off at the container edge. Each breakpoint therefore subtracts its
+ * share of the gaps — half a gap for two-up, two thirds of a gap for three-up.
+ */
+const DEFAULT_SLIDE_CLASS =
+    'w-full md:w-[calc(50%_-_0.75rem)] xl:w-[calc(33.333%_-_1rem)]';
+
+/** Slide width plus the gap: the distance one arrow press must travel. */
+function slideStep(track: HTMLUListElement): number {
+    const first = track.firstElementChild as HTMLElement | null;
+
+    if (first === null) {
+        return track.clientWidth;
+    }
+
+    const gap = Number.parseFloat(window.getComputedStyle(track).columnGap) || 0;
+
+    return first.offsetWidth + gap;
+}
+
 export function Carousel({
     children,
-    slideClassName = 'w-full md:w-1/2 xl:w-1/3',
+    slideClassName = DEFAULT_SLIDE_CLASS,
     label,
     previousLabel,
     nextLabel,
@@ -43,13 +65,10 @@ export function Carousel({
             return;
         }
 
-        // `clientWidth / visibleSlides` is the card width; the number of
-        // visible slides is derived from the first slide's rendered width, so
-        // this keeps working at every breakpoint.
-        const firstSlide = track.firstElementChild as HTMLElement | null;
-        const cardWidth = firstSlide?.offsetWidth ?? track.clientWidth;
-
-        track.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
+        // Advancing by the slide width *plus the gap* lands exactly on the
+        // neighbouring snap point; using the width alone drifted out of sync
+        // with the dots after the second click.
+        track.scrollBy({ left: direction * slideStep(track), behavior: 'smooth' });
     };
 
     const handleScroll = (): void => {
@@ -59,22 +78,20 @@ export function Carousel({
             return;
         }
 
-        const firstSlide = track.firstElementChild as HTMLElement | null;
-        const cardWidth = firstSlide?.offsetWidth ?? 1;
-        const index = Math.round(track.scrollLeft / cardWidth);
+        const step = slideStep(track);
+        const index = Math.round(track.scrollLeft / step);
 
         setActiveIndex(Math.max(0, Math.min(index, children.length - 1)));
     };
 
     const scrollToIndex = (index: number): void => {
         const track = trackRef.current;
-        const firstSlide = track?.firstElementChild as HTMLElement | null;
 
-        if (track === null || track === undefined || firstSlide === null) {
+        if (track === null || track === undefined) {
             return;
         }
 
-        track.scrollTo({ left: index * firstSlide.offsetWidth, behavior: 'smooth' });
+        track.scrollTo({ left: index * slideStep(track), behavior: 'smooth' });
     };
 
     return (

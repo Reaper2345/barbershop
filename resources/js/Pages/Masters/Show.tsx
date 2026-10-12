@@ -9,6 +9,7 @@ import { Pagination } from '@/Components/UI/Pagination';
 import { EmptyState } from '@/Components/UI/EmptyState';
 import { Lightbox, type LightboxPhoto } from '@/Components/UI/Lightbox';
 import { ReviewCard } from '@/Components/Public/ReviewCard';
+import { ReviewModal } from '@/Components/Public/ReviewModal';
 import { CategoryIcon, ClockIcon, QuoteIcon, ScissorsIcon } from '@/lib/icons';
 import { MASTERS_COPY, SERVICE_COPY } from '@/lib/content';
 import { routes } from '@/lib/routes';
@@ -23,6 +24,7 @@ import type {
     Master,
     Paginated,
     PortfolioItemRow,
+    ReviewLike,
     ServerReview,
     SharedProps,
 } from '@/types';
@@ -63,6 +65,9 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
     // One overlay for the whole page; the cards just report which photo was
     // clicked.
     const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
+
+    // Review whose full text is open in the modal (null = closed).
+    const [openReview, setOpenReview] = useState<ReviewLike | null>(null);
 
     // Weekdays this master is scheduled to work, derived from `schedules`.
     const workingDays = (master.schedules ?? []).map((schedule) => schedule.weekday);
@@ -107,8 +112,15 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                     <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
                         {/* ------------------------------------------------
                             Left: photo, identity, bio, rating breakdown
+
+                            Sticky from lg up so the face, name and rating stay
+                            in view while the services / portfolio / reviews
+                            column scrolls. `self-start` is required: without it
+                            a grid child stretches to the row height and sticky
+                            has nothing to move within. Below lg the column is
+                            in normal flow.
                         ------------------------------------------------ */}
-                        <div>
+                        <div className="lg:sticky lg:top-24 lg:self-start">
                             <div className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
                                 <div className="aspect-[4/5]">
                                     <Img
@@ -404,6 +416,7 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                                             <ReviewCard
                                                 review={review}
                                                 onPhotoClick={setLightbox}
+                                                onOpen={setOpenReview}
                                                 className="w-full"
                                             />
                                         </li>
@@ -425,6 +438,12 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                 alt={lightbox?.alt ?? ''}
                 caption={lightbox?.caption ?? null}
                 onClose={() => setLightbox(null)}
+            />
+
+            <ReviewModal
+                review={openReview}
+                onClose={() => setOpenReview(null)}
+                onPhotoClick={setLightbox}
             />
         </AppLayout>
     );
