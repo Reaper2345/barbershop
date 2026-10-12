@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-labelledby="svc-care">
+  <title id="svc-care">Уход</title>
+  <rect width="240" height="240" fill="#141414"/>
+  <circle cx="120" cy="120" r="96" fill="none" stroke="#c9a961" stroke-width="1.5" opacity="0.22"/>
+  <!-- Droplet with ripples: tonic, oils, skin care -->
+  <path d="M120 62 C120 62 90 110 90 138 A30 30 0 0 0 150 138 C150 110 120 62 120 62 Z" fill="none" stroke="#c9a961" stroke-width="3" opacity="0.9"/>
+  <g fill="none" stroke="#c9a961" stroke-width="2" opacity="0.45">
+    <path d="M74 176 q46 14 92 0"/>
+    <path d="M66 192 q54 16 108 0"/>
+  </g>
+</svg>

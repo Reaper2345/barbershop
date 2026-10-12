@@ -27,6 +27,10 @@ import type { AdminPageRow } from '@/types';
 
 export interface AdminPageFormProps {
     page?: AdminPageRow | null;
+    /** Renders just the form, for the modal opened from the list. */
+    embedded?: boolean;
+    /** Called after a successful save and by Cancel when embedded. */
+    onDone?: () => void;
 }
 
 interface PageForm {
@@ -36,7 +40,11 @@ interface PageForm {
     is_published: boolean;
 }
 
-export default function AdminPageForm({ page = null }: AdminPageFormProps) {
+export default function AdminPageForm({
+    page = null,
+    embedded = false,
+    onDone,
+}: AdminPageFormProps) {
     const isEdit = page !== null;
 
     const form = useForm<PageForm>({
@@ -67,29 +75,23 @@ export default function AdminPageForm({ page = null }: AdminPageFormProps) {
             is_published: data.is_published,
         }));
 
+        const options = { onSuccess: () => onDone?.() };
+
         if (isEdit && page !== null) {
-            form.put(routes.admin.page(page.id));
+            form.put(routes.admin.page(page.slug), options);
 
             return;
         }
 
-        form.post(routes.admin.pages);
+        form.post(routes.admin.pages, options);
     };
 
-    return (
-        <AdminLayout
-            title={isEdit ? `Страница: ${page.title}` : 'Новая страница'}
-            subtitle="Содержимое хранится как HTML и выводится на сайте после очистки."
-            nav={buildAdminNav()}
-            breadcrumbs={[
-                { label: 'Панель управления', href: routes.admin.dashboard },
-                { label: 'Страницы', href: routes.admin.pages },
-                { label: isEdit ? 'Редактирование' : 'Создание' },
-            ]}
-        >
-            <Head title={isEdit ? 'Страница' : 'Новая страница'} />
-
-            <form onSubmit={submit} className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+    const body = (
+        <>
+            <form
+                onSubmit={submit}
+                className={cn('grid gap-8', embedded ? 'grid-cols-1' : 'xl:grid-cols-[minmax(0,1fr)_24rem]')}
+            >
                 {/* Left: fields */}
                 <div className="space-y-6">
                     <Input
@@ -157,17 +159,57 @@ export default function AdminPageForm({ page = null }: AdminPageFormProps) {
                             {isEdit ? PANEL.common.save : PANEL.common.create}
                         </Button>
 
-                        <Link
-                            href={routes.admin.pages}
-                            className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
-                        >
-                            {PANEL.common.back}
-                        </Link>
+                        {embedded ? (
+                            <>
+                                <Button type="button" variant="ghost" onClick={() => onDone?.()}>
+                                    {PANEL.common.cancel}
+                                </Button>
+
+                                {/* Long HTML on a small screen: the standalone
+                                    page stays one click away. */}
+                                {isEdit && (
+                                    <Link
+                                        href={routes.admin.pageEdit(page.slug)}
+                                        className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
+                                    >
+                                        Открыть в отдельном окне
+                                    </Link>
+                                )}
+                            </>
+                        ) : (
+                            <Link
+                                href={routes.admin.pages}
+                                className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
+                            >
+                                {PANEL.common.back}
+                            </Link>
+                        )}
                     </div>
                 </div>
 
-                {/* Right: preview */}
-                <aside className="xl:sticky xl:top-28 xl:self-start">
+                {/* Right: preview. In the modal it collapses into a <details>
+                    so the textarea keeps the vertical space. */}
+                {embedded ? (
+                    <details className="rounded-2xl border border-border bg-bg-elevated px-4 py-3">
+                        <summary className="cursor-pointer text-sm font-medium text-text-primary">
+                            Предпросмотр
+                        </summary>
+
+                        <div className="mt-4">
+                            {preview.trim() === '' ? (
+                                <p className="text-sm text-text-secondary">
+                                    Пока нечего показать — начните вводить содержимое.
+                                </p>
+                            ) : (
+                                <article
+                                    className="prose-barber"
+                                    dangerouslySetInnerHTML={{ __html: preview }}
+                                />
+                            )}
+                        </div>
+                    </details>
+                ) : (
+                    <aside className="xl:sticky xl:top-28 xl:self-start">
                     <div className="flex items-center justify-between gap-3">
                         <h2 className="font-display text-lg font-semibold text-text-primary">
                             Предпросмотр
@@ -207,7 +249,29 @@ export default function AdminPageForm({ page = null }: AdminPageFormProps) {
                         Предпросмотр показывает именно то, что увидят посетители.
                     </p>
                 </aside>
+                )}
             </form>
+        </>
+    );
+
+    if (embedded) {
+        return body;
+    }
+
+    return (
+        <AdminLayout
+            title={isEdit ? `Страница: ${page.title}` : 'Новая страница'}
+            subtitle="Содержимое хранится как HTML и выводится на сайте после очистки."
+            nav={buildAdminNav()}
+            breadcrumbs={[
+                { label: 'Панель управления', href: routes.admin.dashboard },
+                { label: 'Страницы', href: routes.admin.pages },
+                { label: isEdit ? 'Редактирование' : 'Создание' },
+            ]}
+        >
+            <Head title={isEdit ? 'Страница' : 'Новая страница'} />
+
+            {body}
         </AdminLayout>
     );
 }

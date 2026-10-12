@@ -5,6 +5,8 @@ import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { SeoModal } from '@/Components/Admin/SeoModal';
 import { Button } from '@/Components/UI/Button';
+import { Modal } from '@/Components/UI/Modal';
+import AdminPageForm from './Form';
 import { Badge } from '@/Components/UI/Badge';
 import { buildAdminNav } from '@/lib/nav';
 import { routes } from '@/lib/routes';
@@ -47,6 +49,8 @@ export default function AdminPagesIndex({
     const [deleting, setDeleting] = useState<AdminPageRow | null>(null);
     const [seoPage, setSeoPage] = useState<AdminPageRow | null>(null);
     const [processing, setProcessing] = useState(false);
+    /** 'create', a row being edited, or null when the modal is closed. */
+    const [dialog, setDialog] = useState<'create' | AdminPageRow | null>(null);
 
     const remove = (): void => {
         if (deleting === null) {
@@ -152,7 +156,7 @@ export default function AdminPagesIndex({
             align: 'right',
             render: (row) => (
                 <div className="flex items-center justify-end gap-2">
-                    <Button href={routes.admin.pageEdit(row.slug)} variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => setDialog(row)}>
                         {PANEL.common.edit}
                     </Button>
 
@@ -183,7 +187,7 @@ export default function AdminPagesIndex({
                 { label: 'Панель управления', href: routes.admin.dashboard },
                 { label: 'Страницы' },
             ]}
-            actions={<Button href={routes.admin.pagesCreate}>{PANEL.common.create}</Button>}
+            actions={<Button onClick={() => setDialog('create')}>{PANEL.common.create}</Button>}
         >
             <Head title={PANEL.admin.pagesTitle} />
 
@@ -215,6 +219,33 @@ export default function AdminPagesIndex({
             />
 
             <SeoModal open={seoPage !== null} page={seoPage} onClose={() => setSeoPage(null)} />
+
+            {/*
+             * Create / edit in a modal. The body scrolls (Modal caps the panel
+             * at the viewport height) and the live preview collapses into a
+             * <details>; the standalone page stays linked from inside for long
+             * HTML on a small screen.
+             */}
+            <Modal
+                open={dialog !== null}
+                onClose={() => setDialog(null)}
+                size="lg"
+                title={
+                    dialog === 'create' || dialog === null
+                        ? 'Новая страница'
+                        : `Страница: ${dialog.title}`
+                }
+                description="Содержимое хранится как HTML и выводится на сайте после очистки."
+            >
+                {dialog !== null && (
+                    <AdminPageForm
+                        key={dialog === 'create' ? 'create' : `edit-${dialog.slug}`}
+                        page={dialog === 'create' ? null : dialog}
+                        embedded
+                        onDone={() => setDialog(null)}
+                    />
+                )}
+            </Modal>
         </AdminLayout>
     );
 }

@@ -1,12 +1,14 @@
-import type { FormEvent, ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { SummaryCard } from '@/Components/Booking/SummaryCard';
 import { PhotoDropzone } from '@/Components/Booking/PhotoDropzone';
 import { Textarea } from '@/Components/UI/Textarea';
 import { Button } from '@/Components/UI/Button';
+import { Modal } from '@/Components/UI/Modal';
 import { AlertIcon } from '@/lib/icons';
 import { BOOKING_COPY } from '@/lib/content';
 import { routes } from '@/lib/routes';
 import { formatIsoDateLabel } from '@/lib/date';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { cn } from '@/lib/format';
 import type { BookingSlot } from '@/types';
 
@@ -50,6 +52,9 @@ export interface StepConfirmProps {
     formError?: string | null;
     onBackToDateTime?: () => void;
 
+    /** Published /privacy page, shown in the consent modal. */
+    privacyContent?: { title?: string | null; content?: string | null } | null;
+
     processing: boolean;
     onSubmit: () => void;
     onBack: () => void;
@@ -75,10 +80,13 @@ export function StepConfirm({
     agreedError,
     formError,
     onBackToDateTime,
+    privacyContent = null,
     processing,
     onSubmit,
     onBack,
 }: StepConfirmProps) {
+    const [privacyOpen, setPrivacyOpen] = useState(false);
+
     // The wizard owns submission state, so the form element only forwards to it.
     const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
@@ -178,20 +186,23 @@ export function StepConfirm({
                             <span>
                                 {BOOKING_COPY.agreePrefix}
                                 {/*
-                                 * Opens the policy in a new tab. The click is
-                                 * stopped from bubbling: the link sits inside
-                                 * the <label>, and without this a click on it
-                                 * would also flip the checkbox.
+                                 * Opens the policy in a modal instead of a new
+                                 * tab. A <button>, not an <a>: the click is
+                                 * stopped from bubbling because the trigger sits
+                                 * inside the <label> and would otherwise flip
+                                 * the checkbox as well.
                                  */}
-                                <a
-                                    href={routes.pages.privacy}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(event) => event.stopPropagation()}
+                                <button
+                                    type="button"
+                                    onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        setPrivacyOpen(true);
+                                    }}
                                     className="text-accent underline underline-offset-2 transition-all duration-300 hover:text-accent-hover"
                                 >
                                     {BOOKING_COPY.agreeLink}
-                                </a>
+                                </button>
                             </span>
                         </label>
 
@@ -204,8 +215,13 @@ export function StepConfirm({
                     </div>
 
                     {/* Actions — duplicated from the wizard footer so the form
-                        submits on Enter as well as on the button. */}
-                    <div className={cn('flex flex-col gap-3 pt-2 sm:flex-row-reverse')}>
+                        submits on Enter as well as on the button, and sticky to
+                        the bottom of the viewport like the wizard's own bar. */}
+                    <div
+                        className={cn(
+                            'sticky bottom-0 z-20 flex flex-col gap-3 border-t border-border bg-bg-primary/95 pb-4 pt-4 backdrop-blur sm:flex-row-reverse',
+                        )}
+                    >
                         <Button
                             type="submit"
                             size="lg"
@@ -230,6 +246,45 @@ export function StepConfirm({
                     </div>
                 </form>
             </div>
+
+            {/* Personal-data policy. Escape, the backdrop and the close button
+                all come from <Modal>; the body scrolls when the text is long. */}
+            <Modal
+                open={privacyOpen}
+                onClose={() => setPrivacyOpen(false)}
+                size="lg"
+                title={privacyContent?.title ?? 'Политика обработки персональных данных'}
+            >
+                {privacyContent?.content !== undefined &&
+                privacyContent?.content !== null &&
+                privacyContent.content !== '' ? (
+                    <div
+                        className="prose-barber text-sm leading-relaxed text-text-secondary"
+                        // Sanitised exactly like the public page render.
+                        dangerouslySetInnerHTML={{
+                            __html: sanitizeHtml(privacyContent.content),
+                        }}
+                    />
+                ) : (
+                    <p className="text-sm text-text-secondary">
+                        Текст политики пока не опубликован. Полную версию можно открыть на
+                        странице{' '}
+                        <a
+                            href={routes.pages.privacy}
+                            className="text-accent underline underline-offset-2"
+                        >
+                            /privacy
+                        </a>
+                        .
+                    </p>
+                )}
+
+                <div className="mt-6 flex justify-end">
+                    <Button type="button" onClick={() => setPrivacyOpen(false)}>
+                        Закрыть
+                    </Button>
+                </div>
+            </Modal>
         </div>
     );
 }

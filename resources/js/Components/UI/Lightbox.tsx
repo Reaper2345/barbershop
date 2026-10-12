@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CloseIcon } from '@/lib/icons';
+import { CloseIcon, ChevronLeftIcon, ChevronRightIcon } from '@/lib/icons';
 import { cn } from '@/lib/format';
 
 /*
@@ -34,14 +34,37 @@ export interface LightboxProps {
     alt: string;
     onClose: () => void;
     caption?: string | null;
+    /**
+     * Optional gallery navigation. Both handlers must be present for the arrows
+     * to render; `canPrev`/`canNext` disable them at the ends (no looping) and
+     * `counter` is the "3 / 12" label.
+     */
+    onPrev?: () => void;
+    onNext?: () => void;
+    canPrev?: boolean;
+    canNext?: boolean;
+    counter?: string | null;
 }
 
 /** Kept in step with the transition duration below. */
 const DURATION = 200;
 
-export function Lightbox({ open, src, alt, onClose, caption = null }: LightboxProps) {
+export function Lightbox({
+    open,
+    src,
+    alt,
+    onClose,
+    caption = null,
+    onPrev,
+    onNext,
+    canPrev = false,
+    canNext = false,
+    counter = null,
+}: LightboxProps) {
     const panelRef = useRef<HTMLDivElement>(null);
     const previouslyFocused = useRef<HTMLElement | null>(null);
+    /** Swipe origin, in clientX. */
+    const touchStartX = useRef<number | null>(null);
     // `mounted` keeps the element in the tree long enough to animate out.
     const [mounted, setMounted] = useState(open);
     const [visible, setVisible] = useState(false);
@@ -79,6 +102,26 @@ export function Lightbox({ open, src, alt, onClose, caption = null }: LightboxPr
                 return;
             }
 
+            /*
+             * Gallery arrows. Captured like Escape so the modal below does not
+             * act on the same press, and disabled ends swallow the key.
+             */
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                const forward = event.key === 'ArrowRight';
+                const handler = forward ? onNext : onPrev;
+                const allowed = forward ? canNext : canPrev;
+
+                if (handler === undefined || allowed === false) {
+                    return;
+                }
+
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                handler();
+
+                return;
+            }
+
             if (event.key !== 'Tab' || panelRef.current === null) {
                 return;
             }
@@ -111,7 +154,7 @@ export function Lightbox({ open, src, alt, onClose, caption = null }: LightboxPr
                 first.focus();
             }
         },
-        [onClose],
+        [onClose, onPrev, onNext, canPrev, canNext],
     );
 
     useEffect(() => {
@@ -186,6 +229,26 @@ export function Lightbox({ open, src, alt, onClose, caption = null }: LightboxPr
                 aria-modal="true"
                 aria-label={alt}
                 tabIndex={-1}
+                onTouchStart={(event) => {
+                    touchStartX.current = event.touches[0]?.clientX ?? null;
+                }}
+                onTouchEnd={(event) => {
+                    const start = touchStartX.current;
+                    const end = event.changedTouches[0]?.clientX ?? null;
+
+                    touchStartX.current = null;
+
+                    if (start === null || end === null || Math.abs(end - start) < 45) {
+                        return;
+                    }
+
+                    // Swipe right → previous, swipe left → next.
+                    if (end < start && canNext) {
+                        onNext?.();
+                    } else if (end > start && canPrev) {
+                        onPrev?.();
+                    }
+                }}
                 className={cn(
                     // The panel takes focus on open, so the app-wide
                     // `:focus-visible` ring would draw a gold box around the
@@ -200,6 +263,34 @@ export function Lightbox({ open, src, alt, onClose, caption = null }: LightboxPr
                     alt={alt}
                     className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl shadow-black/60"
                 />
+
+                {onPrev !== undefined && onNext !== undefined && (
+                    <button
+                        type="button"
+                        onClick={onPrev}
+                        disabled={!canPrev}
+                        aria-label="Предыдущая работа"
+                        className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-border bg-bg-elevated/85 p-3 text-text-secondary backdrop-blur transition-all duration-300 hover:border-accent hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40 sm:left-[-4.5rem]"
+                    >
+                        <ChevronLeftIcon className="h-5 w-5" />
+                    </button>
+                )}
+
+                {onPrev !== undefined && onNext !== undefined && (
+                    <button
+                        type="button"
+                        onClick={onNext}
+                        disabled={!canNext}
+                        aria-label="Следующая работа"
+                        className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-border bg-bg-elevated/85 p-3 text-text-secondary backdrop-blur transition-all duration-300 hover:border-accent hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40 sm:right-[-4.5rem]"
+                    >
+                        <ChevronRightIcon className="h-5 w-5" />
+                    </button>
+                )}
+
+                {counter !== null && counter !== '' && (
+                    <p className="text-xs tabular-nums text-text-secondary">{counter}</p>
+                )}
 
                 {caption !== null && caption !== '' && (
                     <p className="max-w-[90vw] text-center text-sm text-text-secondary">{caption}</p>

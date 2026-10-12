@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-labelledby="svc-hair">
+  <title id="svc-hair">Стрижки</title>
+  <rect width="240" height="240" fill="#141414"/>
+  <circle cx="120" cy="120" r="96" fill="none" stroke="#c9a961" stroke-width="1.5" opacity="0.22"/>
+  <!-- Abstract scissors: two crossing blades and a comb edge -->
+  <g fill="none" stroke="#c9a961" stroke-width="3" stroke-linecap="round">
+    <path d="M74 58 L150 168" opacity="0.9"/>
+    <path d="M166 58 L90 168" opacity="0.9"/>
+    <circle cx="82" cy="176" r="12" opacity="0.7"/>
+    <circle cx="158" cy="176" r="12" opacity="0.7"/>
+  </g>
+  <g stroke="#c9a961" stroke-width="2" opacity="0.45">
+    <path d="M96 196 h48"/>
+    <path d="M102 206 h36"/>
+    <path d="M108 216 h24"/>
+  </g>
+</svg>

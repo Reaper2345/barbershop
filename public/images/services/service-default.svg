@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-labelledby="svc-default">
+  <title id="svc-default">Услуга барбершопа</title>
+  <rect width="240" height="240" fill="#141414"/>
+  <circle cx="120" cy="120" r="96" fill="none" stroke="#c9a961" stroke-width="1.5" opacity="0.22"/>
+  <!-- Neutral mark for a category created later in the admin panel -->
+  <circle cx="120" cy="120" r="54" fill="none" stroke="#c9a961" stroke-width="3" opacity="0.85"/>
+  <path d="M84 156 L156 84" stroke="#c9a961" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <circle cx="120" cy="120" r="7" fill="#c9a961" opacity="0.85"/>
+</svg>

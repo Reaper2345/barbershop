@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { Button } from '@/Components/UI/Button';
+import { Modal } from '@/Components/UI/Modal';
+import AdminServiceForm from './Form';
 import { Badge } from '@/Components/UI/Badge';
 import { buildAdminNav } from '@/lib/nav';
 import { routes } from '@/lib/routes';
 import { PANEL } from '@/lib/panel-copy';
 import { formatDuration, formatPriceRange } from '@/lib/format';
-import type { AdminServiceRow } from '@/types';
+import type { AdminServiceRow, CategorySummary } from '@/types';
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +24,10 @@ import type { AdminServiceRow } from '@/types';
 
 export interface AdminServicesIndexProps {
     services?: AdminServiceRow[];
+    /** For the modal's category select. */
+    categories?: CategorySummary[];
+    /** For the modal's master checkbox list. */
+    masters?: Array<{ id: number; name: string }>;
     services_meta?: {
         current_page: number;
         last_page: number;
@@ -40,12 +46,16 @@ export interface AdminServicesIndexProps {
 
 export default function AdminServicesIndex({
     services = [],
+    categories = [],
+    masters = [],
     services_meta,
     services_links,
 }: AdminServicesIndexProps) {
     const [deleting, setDeleting] = useState<AdminServiceRow | null>(null);
     const [processing, setProcessing] = useState(false);
     const [query, setQuery] = useState('');
+    /** 'create', a row being edited, or null when the modal is closed. */
+    const [dialog, setDialog] = useState<'create' | AdminServiceRow | null>(null);
 
     // Client-side search over the current page; the full catalogue is 14 rows.
     const needle = query.trim().toLowerCase();
@@ -82,12 +92,13 @@ export default function AdminServicesIndex({
             accessor: (row) => row.name,
             render: (row) => (
                 <span>
-                    <Link
-                        href={routes.admin.serviceEdit(row.id)}
-                        className="block font-medium text-text-primary transition-all duration-300 hover:text-accent"
+                    <button
+                        type="button"
+                        onClick={() => setDialog(row)}
+                        className="block text-left font-medium text-text-primary transition-all duration-300 hover:text-accent"
                     >
                         {row.name}
-                    </Link>
+                    </button>
                     {row.description !== null && row.description !== '' && (
                         <span className="line-clamp-1 text-xs text-text-secondary">
                             {row.description}
@@ -168,7 +179,7 @@ export default function AdminServicesIndex({
             className: 'w-[13rem] whitespace-nowrap',
             render: (row) => (
                 <div className="flex items-center justify-end gap-2">
-                    <Button href={routes.admin.serviceEdit(row.id)} variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => setDialog(row)}>
                         {PANEL.common.edit}
                     </Button>
 
@@ -194,7 +205,7 @@ export default function AdminServicesIndex({
                 { label: 'Панель управления', href: routes.admin.dashboard },
                 { label: 'Услуги' },
             ]}
-            actions={<Button href={routes.admin.servicesCreate}>{PANEL.common.create}</Button>}
+            actions={<Button onClick={() => setDialog('create')}>{PANEL.common.create}</Button>}
         >
             <Head title={PANEL.admin.servicesTitle} />
 
@@ -236,6 +247,37 @@ export default function AdminServicesIndex({
                 onConfirm={remove}
                 onClose={() => setDeleting(null)}
             />
+
+            {/*
+             * Create / edit in a modal. Seven fields plus the master checkbox
+             * list, which is why the body scrolls (Modal caps the panel at the
+             * viewport height and scrolls the body alone).
+             */}
+            <Modal
+                open={dialog !== null}
+                onClose={() => setDialog(null)}
+                size="lg"
+                title={
+                    dialog === 'create' || dialog === null
+                        ? 'Новая услуга'
+                        : `Услуга: ${dialog.name}`
+                }
+                description="Базовая цена видна на сайте; мастера могут сузить её в своём кабинете."
+            >
+                {dialog !== null && (
+                    <AdminServiceForm
+                        key={dialog === 'create' ? 'create' : `edit-${dialog.id}`}
+                        service={dialog === 'create' ? null : dialog}
+                        categories={categories}
+                        masters={masters}
+                        assignedMasterIds={
+                            dialog === 'create' ? [] : (dialog.master_ids ?? [])
+                        }
+                        embedded
+                        onDone={() => setDialog(null)}
+                    />
+                )}
+            </Modal>
         </AdminLayout>
     );
 }

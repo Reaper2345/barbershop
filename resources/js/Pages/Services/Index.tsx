@@ -7,6 +7,7 @@ import { CategoryIcon, ClockIcon, ScissorsIcon } from '@/lib/icons';
 import { SERVICE_COPY } from '@/lib/content';
 import { routes } from '@/lib/routes';
 import { formatDuration } from '@/lib/format';
+import { serviceImage } from '@/lib/image';
 import type { Category } from '@/types';
 
 /*
@@ -132,41 +133,59 @@ export default function ServicesIndex({ categories = [] }: ServicesIndexProps) {
                                             {(category.services ?? []).map((service) => (
                                                 <li
                                                     key={service.id}
-                                                    className="group flex flex-col gap-4 p-6 transition-all duration-300 hover:bg-bg-secondary sm:flex-row sm:items-center sm:justify-between"
+                                                    className="group flex flex-col gap-4 p-6 transition-all duration-300 hover:bg-bg-secondary"
                                                 >
-                                                    <div className="min-w-0">
-                                                        <h3 className="font-display text-lg font-semibold text-text-primary">
-                                                            {service.name}
-                                                        </h3>
+                                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                        <div className="min-w-0">
+                                                            <h3 className="font-display text-lg font-semibold text-text-primary">
+                                                                {service.name}
+                                                            </h3>
 
-                                                        {service.description !== null &&
-                                                            service.description !== undefined && (
-                                                                <p className="mt-2 max-w-xl text-sm leading-relaxed text-text-secondary">
-                                                                    {service.description}
-                                                                </p>
-                                                            )}
+                                                            {service.description !== null &&
+                                                                service.description !== undefined && (
+                                                                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-text-secondary">
+                                                                        {service.description}
+                                                                    </p>
+                                                                )}
 
-                                                        <p className="mt-3 flex items-center gap-1.5 text-xs text-text-secondary">
-                                                            <ClockIcon className="h-3.5 w-3.5" />
-                                                            {SERVICE_COPY.duration}:{' '}
-                                                            {formatDuration(service.duration_min)}
-                                                        </p>
+                                                            <p className="mt-3 flex items-center gap-1.5 text-xs text-text-secondary">
+                                                                <ClockIcon className="h-3.5 w-3.5" />
+                                                                {SERVICE_COPY.duration}:{' '}
+                                                                {formatDuration(service.duration_min)}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex shrink-0 items-center justify-between gap-6 sm:flex-col sm:items-end sm:gap-3">
+                                                            <PriceRange
+                                                                min={service.base_price_min}
+                                                                max={service.base_price_max}
+                                                                size="lg"
+                                                            />
+
+                                                            <Link
+                                                                href={routes.booking({ service: service.id })}
+                                                                className="whitespace-nowrap rounded-full border border-border px-4 py-2 text-sm text-text-primary transition-all duration-300 hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-accent"
+                                                            >
+                                                                {SERVICE_COPY.book}
+                                                            </Link>
+                                                        </div>
                                                     </div>
 
-                                                    <div className="flex shrink-0 items-center justify-between gap-6 sm:flex-col sm:items-end sm:gap-3">
-                                                        <PriceRange
-                                                            min={service.base_price_min}
-                                                            max={service.base_price_max}
-                                                            size="lg"
-                                                        />
-
-                                                        <Link
-                                                            href={routes.booking({ service: service.id })}
-                                                            className="whitespace-nowrap rounded-full border border-border px-4 py-2 text-sm text-text-primary transition-all duration-300 hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-accent"
-                                                        >
-                                                            {SERVICE_COPY.book}
-                                                        </Link>
-                                                    </div>
+                                                    {/*
+                                                     * Category illustration, small and at the bottom of
+                                                     * the row. Decorative: the service name above it
+                                                     * already carries the meaning, and the SVG has its
+                                                     * own <title>.
+                                                     */}
+                                                    <img
+                                                        src={serviceImage(category.slug)}
+                                                        alt=""
+                                                        aria-hidden="true"
+                                                        width={64}
+                                                        height={64}
+                                                        loading="lazy"
+                                                        className="mt-1 h-16 w-16 rounded-xl border border-border/60 opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+                                                    />
                                                 </li>
                                             ))}
                                         </ul>

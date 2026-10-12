@@ -71,7 +71,26 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
     const [openReview, setOpenReview] = useState<ReviewLike | null>(null);
 
     // Portfolio work whose full detail is open in the modal (null = closed).
-    const [portfolioItem, setPortfolioItem] = useState<PortfolioItemRow | null>(null);
+    const [portfolioIndex, setPortfolioIndex] = useState<number | null>(null);
+
+    /**
+     * Gallery step used by the modal arrows, the keyboard and the lightbox.
+     * While the lightbox is open it follows the selection, so the full-size
+     * photo never shows a stale work.
+     */
+    const openWork = (position: number): void => {
+        setPortfolioIndex(position);
+
+        const work = portfolioItems[position];
+
+        if (lightbox !== null && work !== undefined) {
+            setLightbox({
+                src: portfolioPhoto(work.photo_path),
+                alt: work.title ?? 'Работа мастера',
+                caption: name,
+            });
+        }
+    };
 
     // Weekdays this master is scheduled to work, derived from `schedules`.
     const workingDays = (master.schedules ?? []).map((schedule) => schedule.weekday);
@@ -332,7 +351,7 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                                     </div>
 
                                     <ul className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                                        {portfolioItems.map((item) => {
+                                        {portfolioItems.map((item, position) => {
                                             const src = portfolioPhoto(item.photo_path);
                                             const title = item.title ?? 'Работа мастера';
 
@@ -341,7 +360,7 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                                                     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setPortfolioItem(item)}
+                                                            onClick={() => setPortfolioIndex(position)}
                                                             className="block w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                                             aria-label={`Открыть работу «${title}»`}
                                                         >
@@ -435,6 +454,17 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                 alt={lightbox?.alt ?? ''}
                 caption={lightbox?.caption ?? null}
                 onClose={() => setLightbox(null)}
+                onPrev={() => portfolioIndex !== null && openWork(portfolioIndex - 1)}
+                onNext={() => portfolioIndex !== null && openWork(portfolioIndex + 1)}
+                canPrev={portfolioIndex !== null && portfolioIndex > 0}
+                canNext={
+                    portfolioIndex !== null && portfolioIndex < portfolioItems.length - 1
+                }
+                counter={
+                    portfolioIndex === null
+                        ? null
+                        : `${portfolioIndex + 1} / ${portfolioItems.length}`
+                }
             />
 
             <ReviewModal
@@ -445,8 +475,10 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
 
             {/* Master link hidden: this IS the master's page. */}
             <PortfolioModal
-                item={portfolioItem}
-                onClose={() => setPortfolioItem(null)}
+                items={portfolioItems}
+                index={portfolioIndex}
+                onNavigate={openWork}
+                onClose={() => setPortfolioIndex(null)}
                 onPhotoClick={setLightbox}
                 showMasterLink={false}
             />

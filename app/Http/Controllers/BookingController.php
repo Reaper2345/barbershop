@@ -7,6 +7,7 @@ use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Category;
 use App\Models\Master;
+use App\Models\Page;
 use App\Services\SlotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +88,20 @@ class BookingController extends Controller
             'selectedService' => $selectedService,
             'date' => $date?->toDateString(),
             'slots' => $slots,
+
+            /*
+             * The consent checkbox on step 4 links to the personal-data policy.
+             * It used to open /privacy in a new tab; the wizard now shows the
+             * same text in a modal, so the content is sent with the page.
+             *
+             * Published pages only: an unpublished policy must not leak into a
+             * public page. Null simply hides the modal body (the link stays).
+             */
+            'privacyContent' => fn (): ?array => Page::query()
+                ->where('slug', 'privacy')
+                ->where('is_published', true)
+                ->first(['title', 'content'])
+                ?->toArray(),
         ]);
     }
 

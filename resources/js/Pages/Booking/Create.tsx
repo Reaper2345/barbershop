@@ -55,6 +55,8 @@ export interface BookingCreateProps {
     selectedService?: Service | null;
     date?: string | null;
     slots?: BookingSlot[];
+    /** Published /privacy page; shown in the step-4 consent modal. */
+    privacyContent?: { title?: string | null; content?: string | null } | null;
 }
 
 /** `?master_id=` is the controller's name; `?master=` is accepted as an alias. */
@@ -80,6 +82,7 @@ export default function BookingCreate({
     // Accepted from BookingController@create but intentionally not used to seed
     // the grid — see the comment on the `slots` state below.
     slots: _initialSlots = [],
+    privacyContent = null,
 }: BookingCreateProps) {
     const { url } = usePage<SharedProps>().props;
 
@@ -580,25 +583,31 @@ export default function BookingCreate({
 
             <section className="section">
                 <div className="container-page">
-                    {/* Progress */}
-                    <StepIndicator
-                        steps={BOOKING_STEPS.map((item) => ({
-                            id: item.id,
-                            label: item.label,
-                            hint:
-                                item.id === 1
-                                    ? BOOKING_COPY.stepHints.service
-                                    : item.id === 2
-                                      ? BOOKING_COPY.stepHints.master
-                                      : item.id === 3
-                                        ? BOOKING_COPY.stepHints.datetime
-                                        : BOOKING_COPY.stepHints.confirm,
-                        }))}
-                        current={step}
-                        furthest={furthest}
-                        onStepClick={jumpTo}
-                        className="mb-12"
-                    />
+                    {/*
+                     * Progress: sticky right under the site header (h-20 + its
+                     * 1px border), so the visitor always sees where they are.
+                     * The bar only spans the content column, which is why the
+                     * background does not need to reach the viewport edges.
+                     */}
+                    <div className="sticky top-20 z-20 -mt-2 mb-10 border-b border-border/70 bg-bg-primary/95 pb-3 pt-4 backdrop-blur">
+                        <StepIndicator
+                            steps={BOOKING_STEPS.map((item) => ({
+                                id: item.id,
+                                label: item.label,
+                                hint:
+                                    item.id === 1
+                                        ? BOOKING_COPY.stepHints.service
+                                        : item.id === 2
+                                          ? BOOKING_COPY.stepHints.master
+                                          : item.id === 3
+                                            ? BOOKING_COPY.stepHints.datetime
+                                            : BOOKING_COPY.stepHints.confirm,
+                            }))}
+                            current={step}
+                            furthest={furthest}
+                            onStepClick={jumpTo}
+                        />
+                    </div>
 
                     <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-14">
                         {/* Step body */}
@@ -692,15 +701,20 @@ export default function BookingCreate({
                                     agreedError={errors.agreement}
                                     formError={formError}
                                     onBackToDateTime={() => setStep(3)}
+                                    privacyContent={privacyContent}
                                     processing={processing}
                                     onSubmit={submit}
                                     onBack={goBack}
                                 />
                             )}
 
-                            {/* Wizard footer nav (step 4 has its own submit row) */}
+                            {/* Wizard footer nav (step 4 has its own submit row).
+                                Sticky to the bottom of the viewport while the
+                                step content is taller than the screen: the
+                                opaque background keeps the content behind it
+                                from bleeding through. */}
                             {step < 4 && (
-                                <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row-reverse sm:items-center sm:justify-between">
+                                <div className="sticky bottom-0 z-20 mt-10 flex flex-col gap-3 border-t border-border bg-bg-primary/95 pb-4 pt-6 backdrop-blur sm:flex-row-reverse sm:items-center sm:justify-between">
                                     <Button
                                         size="lg"
                                         onClick={goNext}

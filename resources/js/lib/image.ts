@@ -139,3 +139,33 @@ export function portfolioPhoto(path: string | null | undefined): string {
     // Bundled placeholder inside public/images/.
     return `/images/${path.replace(/^\/+/, '')}`;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Service illustrations
+|--------------------------------------------------------------------------
+| One bundled SVG per service category, hand-drawn in the same dark + gold
+| style as the portfolio placeholders. Resolving by category keeps the services
+| table untouched (no `image` column to maintain) and every unknown category —
+| one created later in the admin panel — still gets the neutral mark instead of
+| a broken image.
+*/
+
+/** Category slug → illustration. */
+const SERVICE_IMAGES: Record<string, string> = {
+    strizhki: '/images/services/strizhki.svg',
+    'boroda-i-usy': '/images/services/boroda-i-usy.svg',
+    kompleksnye: '/images/services/kompleksnye.svg',
+    ukhod: '/images/services/ukhod.svg',
+};
+
+/** Neutral illustration for a category without a mapping. */
+export const SERVICE_IMAGE_FALLBACK = '/images/services/service-default.svg';
+
+export function serviceImage(categorySlug: string | null | undefined): string {
+    if (categorySlug === null || categorySlug === undefined || categorySlug === '') {
+        return SERVICE_IMAGE_FALLBACK;
+    }
+
+    return SERVICE_IMAGES[categorySlug] ?? SERVICE_IMAGE_FALLBACK;
+}

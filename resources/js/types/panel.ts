@@ -208,6 +208,12 @@ export interface AdminServiceRow {
     is_active: boolean;
     category?: Category;
     masters_count?: number;
+    /**
+     * Masters currently linked to this service. Present on the admin list, which
+     * opens the edit modal: the update endpoint syncs this list, so saving
+     * without it would detach every master.
+     */
+    master_ids?: number[];
 }
 
 export interface AdminCategoryRow {

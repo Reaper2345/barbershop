@@ -43,7 +43,41 @@ export default function PortfolioIndex({
 
     // One overlay of each kind for the whole grid; the cards report clicks.
     const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
-    const [selected, setSelected] = useState<PortfolioItemRow | null>(null);
+    const [selected, setSelected] = useState<number | null>(null);
+
+    /**
+     * Photo of a work, in the shape the Lightbox wants.
+     */
+    const photoFor = (position: number): LightboxPhoto | null => {
+        const work = works[position];
+
+        if (work === undefined) {
+            return null;
+        }
+
+        return {
+            src: portfolioPhoto(work.photo_path),
+            alt: work.title ?? 'Работа мастера',
+            caption: work.master?.user?.name ?? work.master?.name ?? null,
+        };
+    };
+
+    /**
+     * Gallery step used by the modal arrows, the keyboard and the lightbox.
+     * While the lightbox is open it follows the selection, so the full-size
+     * photo never shows a stale work.
+     */
+    const openWork = (position: number): void => {
+        setSelected(position);
+
+        if (lightbox !== null) {
+            const photo = photoFor(position);
+
+            if (photo !== null) {
+                setLightbox(photo);
+            }
+        }
+    };
 
     const totalCount = masters.reduce((sum, master) => sum + master.items_count, 0);
 
@@ -190,11 +224,11 @@ export default function PortfolioIndex({
                             ) : (
                                 <>
                                     <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                                        {works.map((item) => (
+                                        {works.map((item, position) => (
                                             <li key={item.id}>
                                                 <PortfolioCard
                                                     item={item}
-                                                    onOpen={setSelected}
+                                                    onOpen={() => setSelected(position)}
                                                 />
                                             </li>
                                         ))}
@@ -211,9 +245,12 @@ export default function PortfolioIndex({
             </section>
 
             {/* Full work: title, whole description and the master link. The
-                photo inside hands off to the Lightbox below. */}
+                photo inside hands off to the Lightbox below, and both layers
+                browse the same list. */}
             <PortfolioModal
-                item={selected}
+                items={works}
+                index={selected}
+                onNavigate={openWork}
                 onClose={() => setSelected(null)}
                 onPhotoClick={setLightbox}
             />
@@ -224,6 +261,11 @@ export default function PortfolioIndex({
                 alt={lightbox?.alt ?? ''}
                 caption={lightbox?.caption ?? null}
                 onClose={() => setLightbox(null)}
+                onPrev={() => selected !== null && openWork(selected - 1)}
+                onNext={() => selected !== null && openWork(selected + 1)}
+                canPrev={selected !== null && selected > 0}
+                canNext={selected !== null && selected < works.length - 1}
+                counter={selected === null ? null : `${selected + 1} / ${works.length}`}
             />
         </AppLayout>
     );
@@ -295,7 +337,7 @@ function PortfolioCard({
     onOpen,
 }: {
     item: PortfolioItemRow;
-    onOpen: (item: PortfolioItemRow) => void;
+    onOpen: () => void;
 }) {
     const src = portfolioPhoto(item.photo_path);
     const masterName = item.master?.user?.name ?? item.master?.name ?? null;
@@ -305,7 +347,7 @@ function PortfolioCard({
         <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
             <button
                 type="button"
-                onClick={() => onOpen(item)}
+                onClick={() => onOpen()}
                 className="block aspect-square w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 aria-label={`Открыть работу «${title}»`}
             >

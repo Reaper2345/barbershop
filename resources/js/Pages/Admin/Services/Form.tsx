@@ -32,6 +32,10 @@ export interface AdminServiceFormProps {
     masters?: Array<{ id: number; name: string }>;
     /** Masters already linked to this service (edit mode). */
     assignedMasterIds?: number[];
+    /** Renders just the form, for the modal opened from the list. */
+    embedded?: boolean;
+    /** Called after a successful save and by Cancel when embedded. */
+    onDone?: () => void;
 }
 
 interface ServiceForm {
@@ -50,6 +54,8 @@ export default function AdminServiceForm({
     categories = [],
     masters = [],
     assignedMasterIds = [],
+    embedded = false,
+    onDone,
 }: AdminServiceFormProps) {
     const isEdit = service !== null;
 
@@ -119,29 +125,24 @@ export default function AdminServiceForm({
             master_ids: data.master_ids,
         }));
 
+        const options = { onSuccess: () => onDone?.() };
+
         if (isEdit && service !== null) {
-            form.put(routes.admin.service(service.id));
+            form.put(routes.admin.service(service.id), options);
 
             return;
         }
 
-        form.post(routes.admin.services);
+        form.post(routes.admin.services, options);
     };
 
-    return (
-        <AdminLayout
-            title={isEdit ? `Услуга: ${service.name}` : 'Новая услуга'}
-            subtitle="Базовая цена видна на сайте; мастера могут сузить её в своём кабинете."
-            nav={buildAdminNav()}
-            breadcrumbs={[
-                { label: 'Панель управления', href: routes.admin.dashboard },
-                { label: 'Услуги', href: routes.admin.services },
-                { label: isEdit ? 'Редактирование' : 'Создание' },
-            ]}
-        >
-            <Head title={isEdit ? 'Услуга' : 'Новая услуга'} />
-
-            <form onSubmit={submit} className="max-w-3xl space-y-8" noValidate>
+    const body = (
+        <>
+            <form
+                onSubmit={submit}
+                className={cn('space-y-8', embedded ? 'w-full' : 'max-w-3xl')}
+                noValidate
+            >
                 <div className="space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
                     <Select
                         label="Категория"
@@ -333,14 +334,41 @@ export default function AdminServiceForm({
                         {isEdit ? PANEL.common.save : PANEL.common.create}
                     </Button>
 
-                    <Link
-                        href={routes.admin.services}
-                        className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
-                    >
-                        {PANEL.common.back}
-                    </Link>
+                    {embedded ? (
+                        <Button type="button" variant="ghost" onClick={() => onDone?.()}>
+                            {PANEL.common.cancel}
+                        </Button>
+                    ) : (
+                        <Link
+                            href={routes.admin.services}
+                            className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
+                        >
+                            {PANEL.common.back}
+                        </Link>
+                    )}
                 </div>
             </form>
+        </>
+    );
+
+    if (embedded) {
+        return body;
+    }
+
+    return (
+        <AdminLayout
+            title={isEdit ? `Услуга: ${service.name}` : 'Новая услуга'}
+            subtitle="Базовая цена видна на сайте; мастера могут сузить её в своём кабинете."
+            nav={buildAdminNav()}
+            breadcrumbs={[
+                { label: 'Панель управления', href: routes.admin.dashboard },
+                { label: 'Услуги', href: routes.admin.services },
+                { label: isEdit ? 'Редактирование' : 'Создание' },
+            ]}
+        >
+            <Head title={isEdit ? 'Услуга' : 'Новая услуга'} />
+
+            {body}
         </AdminLayout>
     );
 }

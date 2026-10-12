@@ -20,13 +20,30 @@ class ServiceController extends Controller
 
         $services = Service::query()
             ->with('category')
+            /*
+             * The list page opens create/edit in a modal, so each row must carry
+             * its own master assignment: the update endpoint SYNCS master_ids,
+             * and a modal opened without them would detach every master on save.
+             */
+            ->with('masters:id')
             ->withCount('masters')
             ->orderBy('category_id')
             ->orderBy('name')
-            ->paginate(30);
+            ->paginate(30)
+            ->through(function (Service $service): array {
+                $row = $service->toArray();
+                $row['master_ids'] = $service->masters->pluck('id')->all();
+                // The relation itself is not part of the row contract.
+                unset($row['masters']);
+
+                return $row;
+            });
 
         return Inertia::render('Admin/Services/Index', [
             ...$this->paginated($services, 'services'),
+            // Needed by the modal's category select and master checkbox list.
+            'categories' => Category::ordered()->get(['id', 'name', 'slug']),
+            'masters' => $this->masterOptions(),
         ]);
     }
 
