@@ -249,9 +249,16 @@ export default function MasterDashboard({
                 </div>
             )}
 
+            {/*
+             * `h-full` on every card: the hint line («Свободный день»,
+             * «По завершённым визитам») made two of the four cards taller than
+             * the others. The grid stretches each <li> to the row height, so the
+             * cards match as soon as they fill it.
+             */}
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <li>
                     <StatCard
+                        className="h-full"
                         label="Записей сегодня"
                         value={todayTotal}
                         tone="accent"
@@ -261,11 +268,17 @@ export default function MasterDashboard({
                 </li>
 
                 <li>
-                    <StatCard label="Записей за неделю" value={weekTotal} icon={<ClockIcon />} />
+                    <StatCard
+                        className="h-full"
+                        label="Записей за неделю"
+                        value={weekTotal}
+                        icon={<ClockIcon />}
+                    />
                 </li>
 
                 <li>
                     <StatCard
+                        className="h-full"
                         label="Ждут подтверждения"
                         value={pending}
                         tone={pending > 0 ? 'warning' : 'success'}
@@ -275,6 +288,7 @@ export default function MasterDashboard({
 
                 <li>
                     <StatCard
+                        className="h-full"
                         label="Выручка за месяц"
                         value={revenue === null ? '—' : formatPrice(revenue)}
                         tone="accent"
