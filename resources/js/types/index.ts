@@ -340,6 +340,7 @@ export { priceState, canBeReviewed, masterName } from './booking';
  */
 export type {
     TimeOffRow,
+    TimeOffType,
     MasterScheduleDay,
     MasterServiceRow,
     MasterDashboardStats,

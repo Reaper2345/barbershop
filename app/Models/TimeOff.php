@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $master_id
  * @property Carbon $date
+ * @property string $type
  * @property string|null $reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -20,6 +21,24 @@ class TimeOff extends Model
 {
     /** @use HasFactory<\Database\Factories\TimeOffFactory> */
     use HasFactory;
+
+    /** Absence kinds offered by the master's quick actions. */
+    public const TYPE_VACATION = 'vacation';
+
+    public const TYPE_DAY_OFF = 'day_off';
+
+    public const TYPE_SICK = 'sick';
+
+    /**
+     * Stored value → Russian label. The keys are also the validation whitelist.
+     *
+     * @var array<string, string>
+     */
+    public const TYPES = [
+        self::TYPE_VACATION => 'Отпуск',
+        self::TYPE_DAY_OFF => 'Выходной',
+        self::TYPE_SICK => 'Больничный',
+    ];
 
     /**
      * The table name is singular and does not follow Laravel's convention.
@@ -34,6 +53,7 @@ class TimeOff extends Model
     protected $fillable = [
         'master_id',
         'date',
+        'type',
         'reason',
     ];
 
@@ -45,6 +65,14 @@ class TimeOff extends Model
         return [
             'date' => 'date',
         ];
+    }
+
+    /**
+     * Russian label for this row's type, ready for a flash message.
+     */
+    public function typeLabel(): string
+    {
+        return self::TYPES[$this->type] ?? self::TYPES[self::TYPE_DAY_OFF];
     }
 
     /**

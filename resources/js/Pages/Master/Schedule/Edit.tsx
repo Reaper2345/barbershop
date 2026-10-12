@@ -1,17 +1,18 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { Button } from '@/Components/UI/Button';
 import { Input } from '@/Components/UI/Input';
+import { Modal } from '@/Components/UI/Modal';
 import { EmptyState } from '@/Components/UI/EmptyState';
-import { CalendarIcon } from '@/lib/icons';
+import { AlertIcon, CalendarIcon, CheckCircleIcon } from '@/lib/icons';
 import { masterNav } from '@/lib/nav';
 import { routes } from '@/lib/routes';
 import { formatIsoDateLabel, todayIso } from '@/lib/date';
 import { MASTER_COPY } from '@/lib/content';
 import { cn } from '@/lib/format';
-import type { MasterScheduleDay, TimeOffRow } from '@/types';
+import type { MasterScheduleDay, SharedProps, TimeOffRow, TimeOffType } from '@/types';
 
 /*
 |--------------------------------------------------------------------------
@@ -344,47 +345,56 @@ function ValidationSummary({
 | (master_id, date) pair; the controller reports a duplicate as a `date` error.
 */
 
+/** The three quick actions; the same labels drive the list badges. */
+const TIME_OFF_TYPES: Record<TimeOffType, { label: string; emoji: string; hint: string }> = {
+    vacation: { label: 'Отпуск', emoji: '🏖', hint: 'Несколько дней подряд' },
+    day_off: { label: 'Выходной', emoji: '📅', hint: 'Один день' },
+    sick: { label: 'Больничный', emoji: '🤒', hint: 'Период нетрудоспособности' },
+};
+
+const TYPE_ORDER: TimeOffType[] = ['vacation', 'day_off', 'sick'];
+
+function typeMeta(type: string | undefined | null): { label: string; emoji: string; hint: string } {
+    return TIME_OFF_TYPES[(type ?? 'day_off') as TimeOffType] ?? TIME_OFF_TYPES.day_off;
+}
+
 interface TimeOffForm {
-    date: string;
+    type: TimeOffType;
+    date_from: string;
+    date_to: string;
     reason: string;
 }
 
 function TimeOffSection({ timeOff }: { timeOff: TimeOffRow[] }) {
-    const form = useForm<TimeOffForm>({ date: '', reason: '' });
+    const { flash } = usePage<SharedProps>().props;
     const [deleting, setDeleting] = useState<TimeOffRow | null>(null);
-    const [localError, setLocalError] = useState<string | null>(null);
+    /** Which quick action's modal is open, if any. */
+    const [adding, setAdding] = useState<TimeOffType | null>(null);
+
+    /*
+     * The confirmation («Отпуск оформлен: 15–19 октября. У вас 2 записи…»)
+     * arrives as the shared flash after the redirected POST, so the page has to
+     * surface it itself — AdminLayout renders no toast region.
+     */
+    const [flashText, setFlashText] = useState<string | null>(flash?.success ?? null);
+
+    useEffect(() => {
+        setFlashText(flash?.success ?? null);
+    }, [flash?.success]);
+
+    const deleteForm = useForm({});
 
     const remove = (): void => {
         if (deleting === null) {
             return;
         }
 
-        form.delete(routes.masterArea.timeOffDelete(deleting.id), {
+        deleteForm.delete(routes.masterArea.timeOffDelete(deleting.id), {
             preserveScroll: true,
+            // Partial reload: the schedule grid (and any unsaved edits in it)
+            // stays exactly as it is — only the time-off list comes back.
+            only: ['timeOff', 'flash'],
             onFinish: () => setDeleting(null),
-        });
-    };
-
-    const submit = (event: FormEvent<HTMLFormElement>): void => {
-        event.preventDefault();
-
-        if (form.data.date === '') {
-            setLocalError('Выберите дату выходного.');
-
-            return;
-        }
-
-        if (form.data.date < todayIso()) {
-            setLocalError('Нельзя добавить выходной на прошедшую дату.');
-
-            return;
-        }
-
-        setLocalError(null);
-
-        form.post(routes.masterArea.timeOff, {
-            preserveScroll: true,
-            onSuccess: () => form.reset(),
         });
     };
 
@@ -399,25 +409,58 @@ function TimeOffSection({ timeOff }: { timeOff: TimeOffRow[] }) {
                 запись недоступна.
             </p>
 
-            <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-                <div>
-                    {timeOff.length === 0 ? (
-                        <EmptyState
-                            size="sm"
-                            icon={<CalendarIcon />}
-                            title="Исключений нет"
-                            description="Вы работаете по обычному недельному графику."
-                        />
-                    ) : (
-                        <ul className="space-y-3">
-                            {timeOff.map((entry) => (
+            {/* Quick actions */}
+            <div className="mt-6 flex flex-wrap gap-3">
+                {TYPE_ORDER.map((type) => (
+                    <Button
+                        key={type}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setAdding(type)}
+                    >
+                        <span aria-hidden="true" className="mr-2 text-base">
+                            {TIME_OFF_TYPES[type].emoji}
+                        </span>
+                        {TIME_OFF_TYPES[type].label}
+                    </Button>
+                ))}
+            </div>
+
+            {flashText !== null && (
+                <p
+                    role="status"
+                    className="mt-6 flex items-start gap-2 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success"
+                >
+                    <CheckCircleIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                    {flashText}
+                </p>
+            )}
+
+            <div className="mt-8">
+                {timeOff.length === 0 ? (
+                    <EmptyState
+                        size="sm"
+                        icon={<CalendarIcon />}
+                        title="Исключений нет"
+                        description="Вы работаете по обычному недельному графику."
+                    />
+                ) : (
+                    <ul className="space-y-3">
+                        {timeOff.map((entry) => {
+                            const meta = typeMeta(entry.type);
+
+                            return (
                                 <li
                                     key={entry.id}
                                     className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-bg-elevated px-5 py-4"
                                 >
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium text-text-primary">
-                                            {formatIsoDateLabel(entry.date.slice(0, 10), true)}
+                                        <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                                            <span aria-hidden="true">{meta.emoji}</span>
+                                            {meta.label}
+                                            <span className="font-normal text-text-secondary">
+                                                {formatIsoDateLabel(entry.date.slice(0, 10), true)}
+                                            </span>
                                         </p>
 
                                         {entry.reason !== null && entry.reason !== '' && (
@@ -437,60 +480,169 @@ function TimeOffSection({ timeOff }: { timeOff: TimeOffRow[] }) {
                                         Удалить
                                     </Button>
                                 </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                <form
-                    onSubmit={submit}
-                    className="space-y-5 rounded-2xl border border-border bg-bg-elevated p-6"
-                    noValidate
-                >
-                    <h3 className="font-display text-lg font-semibold text-text-primary">
-                        Добавить выходной
-                    </h3>
-
-                    <Input
-                        label="Дата"
-                        name="date"
-                        type="date"
-                        required
-                        min={todayIso()}
-                        value={form.data.date}
-                        error={localError ?? form.errors.date}
-                        onChange={(event) => {
-                            setLocalError(null);
-                            form.setData('date', event.target.value);
-                        }}
-                    />
-
-                    <Input
-                        label="Причина"
-                        name="reason"
-                        maxLength={255}
-                        placeholder="Например: отпуск"
-                        value={form.data.reason}
-                        error={form.errors.reason}
-                        onChange={(event) => form.setData('reason', event.target.value)}
-                    />
-
-                    <Button type="submit" loading={form.processing} fullWidth>
-                        Добавить
-                    </Button>
-                </form>
+                            );
+                        })}
+                    </ul>
+                )}
             </div>
+
+            {adding !== null && (
+                <QuickTimeOffModal
+                    key={adding}
+                    type={adding}
+                    onClose={() => setAdding(null)}
+                />
+            )}
 
             <ConfirmDialog
                 open={deleting !== null}
                 title="Удалить выходной?"
                 message={renderDeleteMessage(deleting)}
                 confirmLabel="Удалить"
-                processing={form.processing}
+                processing={deleteForm.processing}
                 onConfirm={remove}
                 onClose={() => setDeleting(null)}
             />
         </section>
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Quick action modal
+|--------------------------------------------------------------------------
+| Vacation and sick leave ask for a range, a day off for a single date (posted
+| as date_from = date_to, because the endpoint always takes a range). The whole
+| period goes to POST /master/time-off/bulk in one request and comes back as one
+| row per day.
+*/
+
+function QuickTimeOffModal({ type, onClose }: { type: TimeOffType; onClose: () => void }) {
+    const single = type === 'day_off';
+    const meta = TIME_OFF_TYPES[type];
+
+    const form = useForm<TimeOffForm>({
+        type,
+        date_from: todayIso(),
+        date_to: todayIso(),
+        reason: '',
+    });
+
+    const [localError, setLocalError] = useState<string | null>(null);
+
+    const submit = (event: FormEvent<HTMLFormElement>): void => {
+        event.preventDefault();
+
+        if (form.data.date_from === '') {
+            setLocalError('Укажите дату.');
+
+            return;
+        }
+
+        if (!single && form.data.date_to < form.data.date_from) {
+            setLocalError('Дата окончания не может быть раньше даты начала.');
+
+            return;
+        }
+
+        setLocalError(null);
+
+        form.post(routes.masterArea.timeOffBulk, {
+            preserveScroll: true,
+            only: ['timeOff', 'flash'],
+            onSuccess: () => onClose(),
+        });
+    };
+
+    return (
+        <Modal
+            open
+            onClose={onClose}
+            size="md"
+            title={`${meta.emoji} ${meta.label}`}
+            description={
+                single
+                    ? 'День будет вычеркнут из графика — запись на него станет недоступна.'
+                    : `${meta.hint}. Все дни периода будут вычеркнуты из графика.`
+            }
+        >
+            <form onSubmit={submit} className="space-y-5" noValidate>
+                {single ? (
+                    <Input
+                        label="Дата"
+                        name="date"
+                        type="date"
+                        required
+                        min={todayIso()}
+                        value={form.data.date_from}
+                        error={localError ?? form.errors.date_from}
+                        onChange={(event) => {
+                            setLocalError(null);
+                            // One field in the UI, a range on the wire.
+                            form.setData((current) => ({
+                                ...current,
+                                date_from: event.target.value,
+                                date_to: event.target.value,
+                            }));
+                        }}
+                    />
+                ) : (
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <Input
+                            label="С какого числа"
+                            name="date_from"
+                            type="date"
+                            required
+                            min={todayIso()}
+                            value={form.data.date_from}
+                            error={form.errors.date_from}
+                            onChange={(event) => form.setData('date_from', event.target.value)}
+                        />
+
+                        <Input
+                            label="По какое число"
+                            name="date_to"
+                            type="date"
+                            required
+                            min={form.data.date_from === '' ? todayIso() : form.data.date_from}
+                            value={form.data.date_to}
+                            error={localError ?? form.errors.date_to}
+                            onChange={(event) => {
+                                setLocalError(null);
+                                form.setData('date_to', event.target.value);
+                            }}
+                        />
+                    </div>
+                )}
+
+                <Input
+                    label={type === 'sick' ? 'Причина (необязательно)' : 'Комментарий (необязательно)'}
+                    name="reason"
+                    maxLength={255}
+                    placeholder={type === 'vacation' ? 'Например: отпуск' : 'Например: ОРВИ'}
+                    value={form.data.reason}
+                    error={form.errors.reason}
+                    onChange={(event) => form.setData('reason', event.target.value)}
+                />
+
+                {form.hasErrors && localError === null && (
+                    <p role="alert" className="flex items-center gap-1.5 text-xs text-danger">
+                        <AlertIcon className="h-3.5 w-3.5 shrink-0" />
+                        Проверьте выделенные поля.
+                    </p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button type="submit" loading={form.processing}>
+                        Сохранить
+                    </Button>
+
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        Отмена
+                    </Button>
+                </div>
+            </form>
+        </Modal>
     );
 }
 
@@ -501,11 +653,12 @@ function renderDeleteMessage(deleting: TimeOffRow | null): ReactNode {
 
     return (
         <>
-            День{' '}
+            {typeMeta(deleting.type).label}{' '}
             <span className="text-text-primary">
                 {formatIsoDateLabel(deleting.date.slice(0, 10), true)}
             </span>{' '}
-            снова станет рабочим, если он попадает в недельный график.
+            перестанет блокировать запись: день снова станет рабочим, если он попадает в недельный
+            график.
         </>
     );
 }

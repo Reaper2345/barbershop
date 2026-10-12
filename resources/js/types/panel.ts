@@ -18,9 +18,14 @@ export interface TimeOffRow {
     master_id: number;
     /** `date` cast → "2025-03-12T00:00:00.000000Z". */
     date: string;
+    /** vacation | day_off | sick — see App\Models\TimeOff::TYPES. */
+    type?: TimeOffType;
     reason: string | null;
     created_at?: string;
 }
+
+/** Absence kinds the master can add from the schedule page. */
+export type TimeOffType = 'vacation' | 'day_off' | 'sick';
 
 /** One element of ScheduleController@edit's `days` prop. */
 export interface MasterScheduleDay {

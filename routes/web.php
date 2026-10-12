@@ -144,6 +144,7 @@ Route::middleware(['auth', 'role:master'])
         Route::put('/schedule', [ScheduleController::class, 'update'])->name('schedule.update');
 
         Route::post('/time-off', [TimeOffController::class, 'store'])->name('time-off.store');
+        Route::post('/time-off/bulk', [TimeOffController::class, 'bulk'])->name('time-off.bulk');
         Route::delete('/time-off/{timeOff}', [TimeOffController::class, 'destroy'])->name('time-off.destroy');
 
         Route::get('/services', [MasterServiceController::class, 'index'])->name('services.index');

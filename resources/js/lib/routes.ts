@@ -97,6 +97,8 @@ export const routes = {
         dashboard: '/master/dashboard',
         schedule: '/master/schedule',
         timeOff: '/master/time-off',
+        /** Quick actions (отпуск / выходной / больничный): one call, a date range. */
+        timeOffBulk: '/master/time-off/bulk',
         timeOffDelete: (id: number | string): string => `/master/time-off/${id}`,
         services: '/master/services',
         service: (id: number | string): string => `/master/services/${id}`,
