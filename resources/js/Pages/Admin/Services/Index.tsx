@@ -158,10 +158,11 @@ export default function AdminServicesIndex({
             header: PANEL.common.actions,
             align: 'right',
             /*
-             * The width hint has to go on the HEADER cell: the table lays out
-             * with `table-layout: auto`, where a width on a body cell is only a
-             * hint, so the column kept absorbing ~277px. Capping it hands the
-             * slack to «Услуга», which no longer wraps mid-title.
+             * Width hints, best effort: the table lays out with
+             * `table-layout: auto`, so the browser redistributes the leftover
+             * space and the column still ends up around 277px. The real widening
+             * comes from the panel frame (max-w-7xl) — forcing the column
+             * smaller only produced a horizontal scrollbar at 1440.
              */
             headerClassName: 'w-[13rem]',
             className: 'w-[13rem] whitespace-nowrap',
