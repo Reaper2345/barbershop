@@ -6,6 +6,7 @@ import { Input } from '@/Components/UI/Input';
 import { Select } from '@/Components/UI/Select';
 import { Textarea } from '@/Components/UI/Textarea';
 import { AlertIcon, InfoIcon } from '@/lib/icons';
+import { cn } from '@/lib/format';
 import { portfolioPhoto } from '@/lib/image';
 import type { PortfolioItemRow } from '@/types';
 
@@ -36,6 +37,14 @@ export interface PortfolioItemFormProps {
     action: string;
     /** "Отмена" target. */
     cancelHref: string;
+    /**
+     * Renders just the form — no page width cap, Cancel becomes a button — so it
+     * can live in the modal opened from the list. The standalone create/edit
+     * pages keep rendering the full page.
+     */
+    embedded?: boolean;
+    /** Called after a successful save and by Cancel when embedded. */
+    onDone?: () => void;
 }
 
 const DESCRIPTION_MAX = 2000;
@@ -57,6 +66,8 @@ export function PortfolioItemForm({
     masters,
     action,
     cancelHref,
+    embedded = false,
+    onDone,
 }: PortfolioItemFormProps) {
     const isEdit = item !== null;
 
@@ -115,11 +126,16 @@ export function PortfolioItemForm({
         form.post(action, {
             forceFormData: true,
             preserveScroll: true,
+            onSuccess: () => onDone?.(),
         });
     };
 
     return (
-        <form onSubmit={submit} className="max-w-3xl space-y-8" noValidate>
+        <form
+            onSubmit={submit}
+            className={cn('space-y-8', embedded ? 'w-full' : 'max-w-3xl')}
+            noValidate
+        >
             <fieldset className="space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
                 <legend className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                     Работа
@@ -302,12 +318,18 @@ export function PortfolioItemForm({
                     Сохранить
                 </Button>
 
-                <Link
-                    href={cancelHref}
-                    className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
-                >
-                    Отмена
-                </Link>
+                {embedded ? (
+                    <Button type="button" variant="ghost" onClick={() => onDone?.()}>
+                        Отмена
+                    </Button>
+                ) : (
+                    <Link
+                        href={cancelHref}
+                        className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
+                    >
+                        Отмена
+                    </Link>
+                )}
             </div>
         </form>
     );

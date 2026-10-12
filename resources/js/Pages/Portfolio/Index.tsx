@@ -5,6 +5,7 @@ import { Img } from '@/Components/UI/Img';
 import { EmptyState } from '@/Components/UI/EmptyState';
 import { Pagination } from '@/Components/UI/Pagination';
 import { Lightbox, type LightboxPhoto } from '@/Components/UI/Lightbox';
+import { PortfolioModal } from '@/Components/Public/PortfolioModal';
 import { ImagesIcon } from '@/lib/icons';
 import { routes } from '@/lib/routes';
 import { masterPhoto, portfolioPhoto, PORTFOLIO_FALLBACK } from '@/lib/image';
@@ -40,8 +41,9 @@ export default function PortfolioIndex({
     const works = items?.data ?? [];
     const activeMaster = filters?.master ?? null;
 
-    // One overlay for the whole grid; the cards just report what was clicked.
+    // One overlay of each kind for the whole grid; the cards report clicks.
     const [lightbox, setLightbox] = useState<LightboxPhoto | null>(null);
+    const [selected, setSelected] = useState<PortfolioItemRow | null>(null);
 
     const totalCount = masters.reduce((sum, master) => sum + master.items_count, 0);
 
@@ -192,7 +194,7 @@ export default function PortfolioIndex({
                                             <li key={item.id}>
                                                 <PortfolioCard
                                                     item={item}
-                                                    onOpen={setLightbox}
+                                                    onOpen={setSelected}
                                                 />
                                             </li>
                                         ))}
@@ -207,6 +209,14 @@ export default function PortfolioIndex({
                     </div>
                 </div>
             </section>
+
+            {/* Full work: title, whole description and the master link. The
+                photo inside hands off to the Lightbox below. */}
+            <PortfolioModal
+                item={selected}
+                onClose={() => setSelected(null)}
+                onPhotoClick={setLightbox}
+            />
 
             <Lightbox
                 open={lightbox !== null}
@@ -285,7 +295,7 @@ function PortfolioCard({
     onOpen,
 }: {
     item: PortfolioItemRow;
-    onOpen: (photo: LightboxPhoto) => void;
+    onOpen: (item: PortfolioItemRow) => void;
 }) {
     const src = portfolioPhoto(item.photo_path);
     const masterName = item.master?.user?.name ?? item.master?.name ?? null;
@@ -295,9 +305,9 @@ function PortfolioCard({
         <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
             <button
                 type="button"
-                onClick={() => onOpen({ src, alt: title, caption: masterName })}
+                onClick={() => onOpen(item)}
                 className="block aspect-square w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                aria-label={`Открыть работу «${title}» крупнее`}
+                aria-label={`Открыть работу «${title}»`}
             >
                 {/*
                  * A bare <img> (no wrapperClassName) keeps the button's content

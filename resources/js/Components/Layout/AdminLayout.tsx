@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CloseIcon, MenuIcon, UserIcon } from '@/lib/icons';
+import { isPanelItemActive } from '@/lib/nav';
 import { routes } from '@/lib/routes';
 import { cn, initials } from '@/lib/format';
 import type { SharedProps } from '@/types';
@@ -20,6 +21,8 @@ export interface AdminNavItem {
     href: string;
     /** Optional leading icon element. */
     icon?: ReactNode;
+    /** Extra path prefixes that also mark this item active. */
+    match?: string[];
     /** Set on the item that matches the current URL. */
     active?: boolean;
     /** Renders a small count pill, e.g. pending appointments. */
@@ -58,8 +61,44 @@ export function AdminLayout({
     breadcrumbs = [],
     notificationCount,
 }: AdminLayoutProps) {
-    const { auth, siteSettings } = usePage<SharedProps>().props;
+    const { auth, siteSettings, navCounts } = usePage<SharedProps>().props;
+    const { url } = usePage();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    /*
+     * Badges come from the shared `navCounts` prop, so every admin screen shows
+     * the same counters instead of only the pages that happened to pass them.
+     * The URL decides the active item — `match` keeps «Мастера» lit while you are
+     * on /admin/masters/1/edit.
+     */
+    const navItems = useMemo(
+        () =>
+            nav.map((group) => ({
+                ...group,
+                items: group.items.map((item) => {
+                    const shared = navCounts?.[item.href];
+
+                    return {
+                        ...item,
+                        active: isPanelItemActive(url, item.href, item.match),
+                        badge:
+                            shared !== undefined
+                                ? shared > 0
+                                    ? shared
+                                    : undefined
+                                : item.badge,
+                    };
+                }),
+            })),
+        [nav, navCounts, url],
+    );
+
+    /** Bell count: the page's own number, or the shared pending total. */
+    const bellCount =
+        notificationCount ??
+        (navCounts === undefined || navCounts === null
+            ? undefined
+            : (navCounts['/admin/appointments'] ?? 0) + (navCounts['/admin/reviews'] ?? 0));
 
     const user = auth.user;
     const siteName = siteSettings.site_name ?? 'Барбершоп';
@@ -107,7 +146,7 @@ export function AdminLayout({
                     </div>
 
                     <nav className="space-y-8 px-4 py-6" aria-label="Навигация панели">
-                        {nav.map((group) => (
+                        {navItems.map((group) => (
                             <div key={group.title}>
                                 <p className="px-3 pb-3 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-text-secondary">
                                     {group.title}
@@ -121,9 +160,12 @@ export function AdminLayout({
                                                 onClick={() => setSidebarOpen(false)}
                                                 aria-current={item.active === true ? 'page' : undefined}
                                                 className={cn(
-                                                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-300',
+                                                    'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-300',
+                                                    // Gold rail + tinted background mark the
+                                                    // open page; `before:` keeps the rail
+                                                    // from shifting the label.
                                                     item.active === true
-                                                        ? 'bg-bg-elevated text-accent'
+                                                        ? "bg-accent/10 font-medium text-accent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-accent before:content-['']"
                                                         : 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary',
                                                 )}
                                             >
@@ -222,9 +264,9 @@ export function AdminLayout({
 
                             {/* User block */}
                             <div className="flex items-center gap-3">
-                                {notificationCount !== undefined && notificationCount > 0 && (
+                                {bellCount !== undefined && bellCount > 0 && (
                                     <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-                                        {notificationCount}
+                                        {bellCount}
                                     </span>
                                 )}
 

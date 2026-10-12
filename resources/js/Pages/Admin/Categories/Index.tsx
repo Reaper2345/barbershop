@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { Button } from '@/Components/UI/Button';
+import { Modal } from '@/Components/UI/Modal';
+import AdminCategoryForm from './Form';
 import { buildAdminNav } from '@/lib/nav';
 import { routes } from '@/lib/routes';
 import { PANEL } from '@/lib/panel-copy';
@@ -45,6 +47,8 @@ export default function AdminCategoriesIndex({
     const { auth } = usePage<SharedProps>().props;
     const [deleting, setDeleting] = useState<AdminCategoryRow | null>(null);
     const [processing, setProcessing] = useState(false);
+    /** 'create', a row being edited, or null when the modal is closed. */
+    const [dialog, setDialog] = useState<'create' | AdminCategoryRow | null>(null);
 
     const remove = (): void => {
         if (deleting === null) {
@@ -77,12 +81,13 @@ export default function AdminCategoriesIndex({
             sortable: true,
             accessor: (row) => row.name,
             render: (row) => (
-                <Link
-                    href={routes.admin.categoryEdit(row.id)}
-                    className="font-medium text-text-primary transition-all duration-300 hover:text-accent"
+                <button
+                    type="button"
+                    onClick={() => setDialog(row)}
+                    className="text-left font-medium text-text-primary transition-all duration-300 hover:text-accent"
                 >
                     {row.name}
-                </Link>
+                </button>
             ),
         },
         {
@@ -108,7 +113,7 @@ export default function AdminCategoriesIndex({
             align: 'right',
             render: (row) => (
                 <div className="flex items-center justify-end gap-2">
-                    <Button href={routes.admin.categoryEdit(row.id)} variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => setDialog(row)}>
                         {PANEL.common.edit}
                     </Button>
 
@@ -132,7 +137,10 @@ export default function AdminCategoriesIndex({
             nav={buildAdminNav()}
             breadcrumbs={[{ label: 'Панель управления', href: routes.admin.dashboard }, { label: 'Категории' }]}
             actions={
-                <Button href={routes.admin.categoriesCreate} disabled={auth.user?.role !== 'admin'}>
+                <Button
+                    onClick={() => setDialog('create')}
+                    disabled={auth.user?.role !== 'admin'}
+                >
                     {PANEL.common.create}
                 </Button>
             }
@@ -174,6 +182,28 @@ export default function AdminCategoriesIndex({
                 onConfirm={remove}
                 onClose={() => setDeleting(null)}
             />
+
+            {/* Create / edit without leaving the list. */}
+            <Modal
+                open={dialog !== null}
+                onClose={() => setDialog(null)}
+                size="md"
+                title={
+                    dialog === 'create' || dialog === null
+                        ? 'Новая категория'
+                        : `Категория: ${dialog.name}`
+                }
+                description="Категории группируют прайс на сайте и в форме записи."
+            >
+                {dialog !== null && (
+                    <AdminCategoryForm
+                        key={dialog === 'create' ? 'create' : `edit-${dialog.id}`}
+                        category={dialog === 'create' ? null : dialog}
+                        embedded
+                        onDone={() => setDialog(null)}
+                    />
+                )}
+            </Modal>
         </AdminLayout>
     );
 }

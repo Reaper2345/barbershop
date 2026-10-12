@@ -1,1 +1,0 @@
-import{j as t}from"./app-B1WH89SW.js";import{A as m}from"./Create-fc0zYkvP.js";import"./nav-BH2Yn7aY.js";import"./format-OXQXGYY4.js";import"./Button-CWDM4GWI.js";import"./Input-CXUGD8xR.js";import"./Textarea-uOJWONCm.js";import"./panel-copy-R3pubHZQ.js";import"./sanitize-DwyjhGaZ.js";function u({page:r}){return t.jsx(m,{page:r})}export{u as default};

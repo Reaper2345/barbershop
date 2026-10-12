@@ -4,6 +4,7 @@ import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { Button } from '@/Components/UI/Button';
 import { Input } from '@/Components/UI/Input';
 import { AlertIcon, InfoIcon } from '@/lib/icons';
+import { cn } from '@/lib/format';
 import { buildAdminNav } from '@/lib/nav';
 import { routes } from '@/lib/routes';
 import { PANEL } from '@/lib/panel-copy';
@@ -22,6 +23,10 @@ import type { AdminCategoryRow } from '@/types';
 export interface AdminCategoryFormProps {
     /** Present in edit mode. */
     category?: AdminCategoryRow | null;
+    /** Renders just the form, for the modal opened from the list. */
+    embedded?: boolean;
+    /** Called after a successful save and by Cancel when embedded. */
+    onDone?: () => void;
 }
 
 interface CategoryForm {
@@ -30,7 +35,11 @@ interface CategoryForm {
     sort_order: string;
 }
 
-export default function AdminCategoryForm({ category = null }: AdminCategoryFormProps) {
+export default function AdminCategoryForm({
+    category = null,
+    embedded = false,
+    onDone,
+}: AdminCategoryFormProps) {
     const isEdit = category !== null;
 
     const form = useForm<CategoryForm>({
@@ -58,29 +67,24 @@ export default function AdminCategoryForm({ category = null }: AdminCategoryForm
             sort_order: Number(data.sort_order === '' ? 0 : data.sort_order),
         }));
 
+        const options = { onSuccess: () => onDone?.() };
+
         if (isEdit && category !== null) {
-            form.put(routes.admin.category(category.id));
+            form.put(routes.admin.category(category.id), options);
 
             return;
         }
 
-        form.post(routes.admin.categories);
+        form.post(routes.admin.categories, options);
     };
 
-    return (
-        <AdminLayout
-            title={isEdit ? `Категория: ${category.name}` : 'Новая категория'}
-            subtitle="Категории группируют прайс на сайте и в форме записи."
-            nav={buildAdminNav()}
-            breadcrumbs={[
-                { label: 'Панель управления', href: routes.admin.dashboard },
-                { label: 'Категории', href: routes.admin.categories },
-                { label: isEdit ? 'Редактирование' : 'Создание' },
-            ]}
-        >
-            <Head title={isEdit ? 'Категория' : 'Новая категория'} />
-
-            <form onSubmit={submit} className="max-w-2xl space-y-6" noValidate>
+    const body = (
+        <>
+            <form
+                onSubmit={submit}
+                className={cn('space-y-6', embedded ? 'w-full' : 'max-w-2xl')}
+                noValidate
+            >
                 <Input
                     label="Название"
                     name="name"
@@ -135,14 +139,41 @@ export default function AdminCategoryForm({ category = null }: AdminCategoryForm
                         {isEdit ? PANEL.common.save : PANEL.common.create}
                     </Button>
 
-                    <Link
-                        href={routes.admin.categories}
-                        className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
-                    >
-                        {PANEL.common.back}
-                    </Link>
+                    {embedded ? (
+                        <Button type="button" variant="ghost" onClick={() => onDone?.()}>
+                            {PANEL.common.cancel}
+                        </Button>
+                    ) : (
+                        <Link
+                            href={routes.admin.categories}
+                            className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
+                        >
+                            {PANEL.common.back}
+                        </Link>
+                    )}
                 </div>
             </form>
+        </>
+    );
+
+    if (embedded) {
+        return body;
+    }
+
+    return (
+        <AdminLayout
+            title={isEdit ? `Категория: ${category.name}` : 'Новая категория'}
+            subtitle="Категории группируют прайс на сайте и в форме записи."
+            nav={buildAdminNav()}
+            breadcrumbs={[
+                { label: 'Панель управления', href: routes.admin.dashboard },
+                { label: 'Категории', href: routes.admin.categories },
+                { label: isEdit ? 'Редактирование' : 'Создание' },
+            ]}
+        >
+            <Head title={isEdit ? 'Категория' : 'Новая категория'} />
+
+            {body}
         </AdminLayout>
     );
 }

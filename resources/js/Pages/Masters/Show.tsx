@@ -10,6 +10,7 @@ import { EmptyState } from '@/Components/UI/EmptyState';
 import { Lightbox, type LightboxPhoto } from '@/Components/UI/Lightbox';
 import { ReviewCard } from '@/Components/Public/ReviewCard';
 import { ReviewModal } from '@/Components/Public/ReviewModal';
+import { PortfolioModal } from '@/Components/Public/PortfolioModal';
 import { CategoryIcon, ClockIcon, QuoteIcon, ScissorsIcon } from '@/lib/icons';
 import { MASTERS_COPY, SERVICE_COPY } from '@/lib/content';
 import { routes } from '@/lib/routes';
@@ -68,6 +69,9 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
 
     // Review whose full text is open in the modal (null = closed).
     const [openReview, setOpenReview] = useState<ReviewLike | null>(null);
+
+    // Portfolio work whose full detail is open in the modal (null = closed).
+    const [portfolioItem, setPortfolioItem] = useState<PortfolioItemRow | null>(null);
 
     // Weekdays this master is scheduled to work, derived from `schedules`.
     const workingDays = (master.schedules ?? []).map((schedule) => schedule.weekday);
@@ -337,16 +341,9 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                                                     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-elevated transition-all duration-300 hover:border-accent/60">
                                                         <button
                                                             type="button"
-                                                            onClick={() =>
-                                                                setLightbox({
-                                                                    src,
-                                                                    alt: title,
-                                                                    caption:
-                                                                        item.description ?? name,
-                                                                })
-                                                            }
+                                                            onClick={() => setPortfolioItem(item)}
                                                             className="block w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                                                            aria-label={`Открыть работу «${title}» крупнее`}
+                                                            aria-label={`Открыть работу «${title}»`}
                                                         >
                                                             <Img
                                                                 src={src}
@@ -444,6 +441,14 @@ export default function MasterShow({ master, reviews, portfolio }: MasterShowPro
                 review={openReview}
                 onClose={() => setOpenReview(null)}
                 onPhotoClick={setLightbox}
+            />
+
+            {/* Master link hidden: this IS the master's page. */}
+            <PortfolioModal
+                item={portfolioItem}
+                onClose={() => setPortfolioItem(null)}
+                onPhotoClick={setLightbox}
+                showMasterLink={false}
             />
         </AppLayout>
     );

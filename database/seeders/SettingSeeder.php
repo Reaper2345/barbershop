@@ -46,9 +46,9 @@ class SettingSeeder extends Seeder
         ],
         /*
          * Coordinates of the address above (Покровка 14, стр. 2 — five minutes
-         * from Китай-город). They drive the OpenStreetMap block on the home
-         * page and on /contacts; clearing them falls back to a static panel
-         * with an "Открыть в картах" link.
+         * from Китай-город). They drive the Yandex Maps block on the home page
+         * and on /contacts; clearing them falls back to a static panel with an
+         * "Открыть в картах" link.
          */
         [
             'key' => 'map_lat',
@@ -58,6 +58,16 @@ class SettingSeeder extends Seeder
         [
             'key' => 'map_lng',
             'value' => '37.648578',
+            'group' => 'contacts',
+        ],
+        /*
+         * Yandex Maps JS API v3 key (paste it here from the Yandex developer
+         * cabinet). While it is empty the contacts map renders the keyless
+         * OpenStreetMap embed instead, so the block is never blank.
+         */
+        [
+            'key' => 'yandex_maps_api_key',
+            'value' => '',
             'group' => 'contacts',
         ],
         [

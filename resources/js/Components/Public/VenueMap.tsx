@@ -1,42 +1,66 @@
-import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { useEffect, useRef, useState } from 'react';
 import { MapPinIcon } from '@/lib/icons';
 
 /*
 |--------------------------------------------------------------------------
 | VenueMap
 |--------------------------------------------------------------------------
-| Interactive OpenStreetMap map for the contacts block (home page and the
-| CMS contacts page).
+| Venue map for the contacts block (home page and the CMS contacts page).
 |
-| Leaflet is a real npm dependency, not a CDN script: vite bundles the library
-| and its stylesheet into public/build, so the page needs no third-party
-| script host at runtime. Only the raster tiles come from openstreetmap.org,
-| which is what "no API key" buys.
+| PRIMARY — Yandex Maps JS API v3, loaded from api-maps.yandex.ru with the key
+| stored in the `yandex_maps_api_key` setting (paste it in /admin/settings). The
+| The API key is only used to build the script URL; the map itself is drawn from
+| settings.map_lat / settings.map_lng with a custom marker element.
 |
-| Coordinates come from the `map_lat` / `map_lng` settings. When they are
-| missing or unparsable the component degrades to a bordered panel with the
-| address and an "Открыть в картах" link instead of an empty grey box.
+|   Scroll behaviour: v3 does not zoom on the wheel unless 'scrollZoom' is in
+|   the behaviour list, so we leave it out and add our own NON-PASSIVE wheel
+|   listener. Plain wheel → the event is not touched and bubbles, so the PAGE
+|   scrolls. Ctrl/Cmd + wheel → preventDefault + stopPropagation and we move the
+|   camera ourselves. The container is `touch-action: pan-y`, so one finger
+|   scrolls the page while two fingers still pinch-zoom the map.
 |
-| Leaflet ships its marker images as separate files and resolves them from a
-| path that does not survive bundling, hence the explicit icon imports below.
+| FALLBACK — no key, or the script failed to load: the OpenStreetMap embed
+| iframe, which needs no key and still shows a marker (`marker=lat,lng`), so the
+| map never breaks. An iframe swallows wheel events, so it starts with
+| `pointer-events: none` behind a "click to interact" overlay — the page keeps
+| scrolling until the visitor explicitly opts into the map.
+|
+| With no coordinates at all it degrades to an address panel with a link.
 */
 
-L.Icon.Default.mergeOptions({
-    iconUrl: markerIcon,
-    iconRetinaUrl: markerIcon2x,
-    shadowUrl: markerShadow,
-});
+/** Minimal shape of the pieces of the v3 global we touch. */
+interface YandexMapInstance {
+    update: (options: { location?: { center?: [number, number]; zoom?: number } }) => void;
+    addChild: (child: unknown) => void;
+    destroy: () => void;
+}
+
+interface YandexMaps3 {
+    ready: Promise<void>;
+    YMap: new (container: HTMLElement, options: unknown) => YandexMapInstance;
+    YMapDefaultSchemeLayer: new (options: unknown) => unknown;
+    YMapDefaultFeaturesLayer: new (options: unknown) => unknown;
+    YMapMarker: new (options: unknown, element: HTMLElement) => unknown;
+}
+
+declare global {
+    interface Window {
+        ymaps3?: YandexMaps3;
+    }
+}
+
+const SCRIPT_ID = 'yandex-maps-v3';
+const LOAD_TIMEOUT_MS = 12_000;
+const MIN_ZOOM = 3;
+const MAX_ZOOM = 21;
 
 export interface VenueMapProps {
     /** `null` when the setting is absent or not a number. */
     lat: number | null;
     lng: number | null;
     address: string | null;
+    /** Yandex Maps API key; without it the OpenStreetMap embed is used. */
+    apiKey?: string | null;
     /** Optional caption under the map. */
     note?: string | null;
     zoom?: number;
@@ -54,69 +78,209 @@ export function parseCoordinate(value: string | null | undefined): number | null
     return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * Injects the v3 script once and resolves with the global.
+ *
+ * A promise, not a hook: the component may mount twice (React 18 strict mode)
+ * and the script tag must not be duplicated.
+ */
+function loadYandexMaps(apiKey: string): Promise<YandexMaps3> {
+    return new Promise<YandexMaps3>((resolve, reject) => {
+        const existing = window.ymaps3;
+
+        if (existing !== undefined) {
+            void existing.ready.then(() => resolve(existing));
+
+            return;
+        }
+
+        let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+
+        if (script === null) {
+            script = document.createElement('script');
+            script.id = SCRIPT_ID;
+            script.async = true;
+            script.src = `https://api-maps.yandex.ru/v3/?apikey=${encodeURIComponent(apiKey)}&lang=ru_RU`;
+            document.head.appendChild(script);
+        }
+
+        const fail = (message: string): void => {
+            window.clearTimeout(timer);
+            reject(new Error(message));
+        };
+
+        const timer = window.setTimeout(() => fail('yandex-maps-timeout'), LOAD_TIMEOUT_MS);
+
+        script.addEventListener(
+            'load',
+            () => {
+                const ymaps3 = window.ymaps3;
+
+                if (ymaps3 === undefined) {
+                    fail('yandex-maps-missing');
+
+                    return;
+                }
+
+                window.clearTimeout(timer);
+                void ymaps3.ready.then(() => resolve(ymaps3));
+            },
+            { once: true },
+        );
+
+        script.addEventListener('error', () => fail('yandex-maps-error'), { once: true });
+    });
+}
+
+function markerElement(address: string | null): HTMLElement {
+    const element = document.createElement('div');
+    element.style.cssText = [
+        'width:18px',
+        'height:18px',
+        'border-radius:9999px',
+        'background:#d4af37',
+        'border:3px solid #10100e',
+        'box-shadow:0 0 0 2px rgba(212,175,55,0.55)',
+        'transform:translate(-50%,-50%)',
+    ].join(';');
+
+    if (address !== null) {
+        element.title = address;
+    }
+
+    return element;
+}
+
 export function VenueMap({
     lat,
     lng,
     address,
+    apiKey = null,
     note,
     zoom = 16,
     className,
 }: VenueMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const mapRef = useRef<L.Map | null>(null);
+    const mapRef = useRef<YandexMapInstance | null>(null);
+    /** Current camera zoom, tracked so Ctrl+wheel can step it. */
+    const zoomRef = useRef(zoom);
+    /** 'idle' → script loading, 'ready' → v3 map, 'fallback' → embed iframe. */
+    const [status, setStatus] = useState<'idle' | 'ready' | 'fallback'>('idle');
+    /** The OSM iframe ignores the wheel until the visitor opts in. */
+    const [iframeActive, setIframeActive] = useState(false);
 
     const hasPoint = lat !== null && lng !== null;
+    const apiKeyValue = apiKey !== null && apiKey.trim() !== '' ? apiKey.trim() : null;
 
+    // Reset the interaction state when the point or the key changes.
+    useEffect(() => {
+        setIframeActive(false);
+    }, [lat, lng, apiKeyValue]);
+
+    // Build the v3 map when an API key is configured.
     useEffect(() => {
         const container = containerRef.current;
 
-        if (!hasPoint || container === null || lat === null || lng === null) {
+        if (!hasPoint || apiKeyValue === null || lat === null || lng === null || container === null) {
             return;
         }
 
-        // Leaflet throws "Map container is already initialized" when React
-        // re-runs the effect, so an existing instance is torn down first.
-        if (mapRef.current !== null) {
-            mapRef.current.remove();
-            mapRef.current = null;
-        }
+        let cancelled = false;
 
-        const map = L.map(container, {
-            center: [lat, lng],
-            zoom,
-            // The page scrolls; the map must not swallow the wheel.
-            scrollWheelZoom: false,
-            attributionControl: true,
-        });
+        zoomRef.current = zoom;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            subdomains: 'abc',
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        }).addTo(map);
+        void loadYandexMaps(apiKeyValue)
+            .then((ymaps3) => {
+                if (cancelled || containerRef.current === null) {
+                    return;
+                }
 
-        L.marker([lat, lng]).addTo(map);
+                const map = new ymaps3.YMap(container, {
+                    location: { center: [lng, lat], zoom },
+                    /*
+                     * Deliberately no 'scrollZoom': with it the wheel would be
+                     * swallowed. Everything else (drag, pinch, double click,
+                     * magnifier) is fine.
+                     */
+                    behaviors: ['drag', 'pinchZoom', 'dblClick', 'magnifier'],
+                });
 
-        mapRef.current = map;
+                map.addChild(new ymaps3.YMapDefaultSchemeLayer({}));
+                map.addChild(new ymaps3.YMapDefaultFeaturesLayer({}));
+                map.addChild(
+                    new ymaps3.YMapMarker({ coordinates: [lng, lat] }, markerElement(address)),
+                );
 
-        /*
-         * The container is sized by the layout, and Leaflet measures it on
-         * creation — inside a grid/flex box that measurement can happen before
-         * the final size is known, which leaves grey bands. One invalidate
-         * after the first paint fixes the tiles.
-         */
-        const frame = window.requestAnimationFrame(() => map.invalidateSize());
+                mapRef.current = map;
+                setStatus('ready');
+            })
+            .catch(() => {
+                // Blocked network, bad key, ad-blocker — the embed still works.
+                if (!cancelled) {
+                    setStatus('fallback');
+                }
+            });
 
         return () => {
-            window.cancelAnimationFrame(frame);
-            map.remove();
+            cancelled = true;
+            setStatus('idle');
+
+            const map = mapRef.current;
             mapRef.current = null;
+
+            try {
+                map?.destroy();
+            } catch {
+                // The API throws if the container was already torn down.
+            }
         };
-    }, [hasPoint, lat, lng, zoom]);
+    }, [hasPoint, apiKeyValue, lat, lng, zoom, address]);
+
+    /*
+     * Ctrl/Cmd + wheel zooms the map; a plain wheel is left alone so the page
+     * scrolls. `passive: false` is required for preventDefault to count — React's
+     * onWheel is registered passively and would be ignored.
+     */
+    useEffect(() => {
+        const container = containerRef.current;
+
+        if (status !== 'ready' || container === null) {
+            return;
+        }
+
+        const handleWheel = (event: WheelEvent): void => {
+            if (!event.ctrlKey && !event.metaKey) {
+                return; // Let it bubble: the page scrolls over the map.
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const map = mapRef.current;
+
+            if (map === null) {
+                return;
+            }
+
+            const step = event.deltaY > 0 ? -1 : 1;
+            const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomRef.current + step));
+
+            if (next === zoomRef.current) {
+                return;
+            }
+
+            zoomRef.current = next;
+            map.update({ location: { center: [lng as number, lat as number], zoom: next } });
+        };
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, [status, lat, lng]);
 
     const fallbackQuery = encodeURIComponent(address ?? 'барбершоп');
 
-    if (!hasPoint) {
+    if (!hasPoint || lat === null || lng === null) {
         return (
             <div
                 className={[
@@ -146,14 +310,49 @@ export function VenueMap({
         );
     }
 
+    const useYandex = apiKeyValue !== null && status !== 'fallback';
+    const d = 0.01;
+    const embedSrc =
+        `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d}%2C${lat - d / 2}%2C${lng + d}%2C${lat + d / 2}` +
+        `&layer=mapnik&marker=${lat}%2C${lng}`;
+
     return (
         <div className={['relative', className ?? ''].join(' ')}>
-            <div
-                ref={containerRef}
-                className="min-h-[18rem] w-full overflow-hidden rounded-2xl border border-border bg-bg-elevated"
-                role="region"
-                aria-label={address === null ? 'Карта' : `Карта: ${address}`}
-            />
+            {useYandex ? (
+                // Key configured: render (or keep) the v3 target. While the
+                // script loads the container is simply empty, which is why the
+                // border/background are already painted.
+                <div
+                    ref={containerRef}
+                    className="min-h-[18rem] w-full overflow-hidden rounded-2xl border border-border bg-bg-elevated [touch-action:pan-y]"
+                    role="region"
+                    aria-label={address === null ? 'Карта' : `Карта: ${address}`}
+                />
+            ) : (
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+                    <iframe
+                        title={address === null ? 'Карта' : `Карта: ${address}`}
+                        src={embedSrc}
+                        loading="lazy"
+                        className={[
+                            'block h-[18rem] w-full border-0',
+                            iframeActive ? '' : 'pointer-events-none',
+                        ].join(' ')}
+                    />
+
+                    {!iframeActive && (
+                        <button
+                            type="button"
+                            onClick={() => setIframeActive(true)}
+                            className="absolute inset-0 flex items-end justify-center bg-black/5 pb-4 text-xs font-medium text-text-primary transition-all duration-300 hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                            <span className="rounded-full border border-border bg-bg-elevated/95 px-3 py-1.5">
+                                Нажмите, чтобы управлять картой
+                            </span>
+                        </button>
+                    )}
+                </div>
+            )}
 
             {(address !== null || (note !== undefined && note !== null)) && (
                 <p className="mt-3 text-xs text-text-secondary">

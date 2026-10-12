@@ -212,11 +212,13 @@ export default function PageShow({ page }: PageShowProps) {
                                     <CallbackForm className="mt-6" />
                                 </div>
 
-                                {/* OpenStreetMap (Leaflet bundled locally). */}
+                                {/* Yandex Maps (JS API v3 with a key from
+                                    settings, OpenStreetMap embed without one). */}
                                 <VenueMap
                                     lat={mapLat}
                                     lng={mapLng}
                                     address={address}
+                                    apiKey={siteSettings.yandex_maps_api_key ?? null}
                                     note={CONTACT_COPY.mapNote}
                                 />
                             </div>

@@ -428,12 +428,14 @@ export default function Home({
                             </div>
                         </div>
 
-                        {/* OpenStreetMap (Leaflet bundled locally). Falls back
-                            to an address panel when map_lat/map_lng are unset. */}
+                        {/* Yandex Maps (JS API v3 with a key from settings,
+                            OpenStreetMap embed without one). Falls back to an
+                            address panel when map_lat/map_lng are unset. */}
                         <VenueMap
                             lat={mapLat}
                             lng={mapLng}
                             address={address}
+                            apiKey={siteSettings.yandex_maps_api_key ?? null}
                             note={CONTACT_COPY.mapNote}
                         />
                     </div>

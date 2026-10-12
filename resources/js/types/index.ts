@@ -250,6 +250,11 @@ export interface SharedProps {
     flash: FlashMessages;
     siteSettings: SiteSettings;
     notifications: NotificationItem[];
+    /**
+     * Admin sidebar counters keyed by nav href, shared on every request so the
+     * badges survive navigation. Empty for clients and masters.
+     */
+    navCounts?: Record<string, number>;
     [key: string]: unknown;
 }
 

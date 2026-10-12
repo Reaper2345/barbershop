@@ -3,7 +3,6 @@ import { router } from '@inertiajs/react';
 import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { Button } from '@/Components/UI/Button';
-import { Badge } from '@/Components/UI/Badge';
 import { Img } from '@/Components/UI/Img';
 import { cn } from '@/lib/format';
 import { portfolioPhoto, PORTFOLIO_FALLBACK } from '@/lib/image';
@@ -32,6 +31,11 @@ export interface PortfolioItemsTableProps {
     editHref: (item: PortfolioItemRow) => string;
     destroyUrl: (item: PortfolioItemRow) => string;
     toggleUrl: (item: PortfolioItemRow) => string;
+    /**
+     * When given, «Изменить» opens the panel's modal instead of navigating to
+     * `editHref`. The href stays as the fallback for the standalone page.
+     */
+    onEdit?: (item: PortfolioItemRow) => void;
 }
 
 export function PortfolioItemsTable({
@@ -42,6 +46,7 @@ export function PortfolioItemsTable({
     editHref,
     destroyUrl,
     toggleUrl,
+    onEdit,
 }: PortfolioItemsTableProps) {
     const [deleting, setDeleting] = useState<PortfolioItemRow | null>(null);
     const [processing, setProcessing] = useState(false);
@@ -142,6 +147,10 @@ export function PortfolioItemsTable({
             sortable: true,
             accessor: (item) => (item.is_published ? 1 : 0),
             render: (item) => (
+                /*
+                 * ONE pill. The button used to be styled as a pill AND contain a
+                 * <Badge>, which rendered «Опубликовано» twice, stacked.
+                 */
                 <button
                     type="button"
                     onClick={() => toggle(item)}
@@ -153,7 +162,7 @@ export function PortfolioItemsTable({
                             : 'Опубликовать работу на сайте'
                     }
                     className={cn(
-                        'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-all duration-300',
+                        'inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-all duration-300',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                         toggling === item.id && 'opacity-60',
                         item.is_published
@@ -161,9 +170,14 @@ export function PortfolioItemsTable({
                             : 'border-border bg-bg-secondary text-text-secondary hover:border-accent hover:text-accent',
                     )}
                 >
-                    <Badge tone={item.is_published ? 'emerald' : 'neutral'} dot>
-                        {item.is_published ? 'Опубликовано' : 'Черновик'}
-                    </Badge>
+                    <span
+                        className={cn(
+                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                            item.is_published ? 'bg-success' : 'bg-text-secondary',
+                        )}
+                        aria-hidden="true"
+                    />
+                    {item.is_published ? 'Опубликовано' : 'Черновик'}
                 </button>
             ),
         },
@@ -173,9 +187,19 @@ export function PortfolioItemsTable({
             align: 'right',
             render: (item) => (
                 <div className="flex items-center justify-end gap-2">
-                    <Button href={editHref(item)} variant="ghost" size="sm">
-                        Изменить
-                    </Button>
+                    {onEdit === undefined ? (
+                        <Button href={editHref(item)} variant="ghost" size="sm">
+                            Изменить
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEdit(item)}
+                        >
+                            Изменить
+                        </Button>
+                    )}
 
                     <Button
                         variant="ghost"
