@@ -7,17 +7,17 @@ use App\Http\Requests\Master\UpdateMasterProfileRequest;
 use App\Models\Master;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class MasterProfileController extends Controller
 {
     /**
-     * The master's own profile: photo, bio and experience.
+     * The master's own profile page.
      *
-     * Name and email belong to the linked User row and are shown read-only —
-     * only an administrator changes them (Admin\UserController).
+     * READ-ONLY for the master: name, phone, photo, bio and experience are all
+     * shown for reference and are changed by an administrator. The only field
+     * the master may edit is his login email.
      */
     public function edit(Request $request): Response
     {
@@ -30,59 +30,31 @@ class MasterProfileController extends Controller
             // so the /storage prefix is applied in exactly one place.
             'photo_url' => $master->photo,
             'name' => $master->user?->name,
+            'phone' => $master->user?->phone,
             'email' => $master->user?->email,
         ]);
     }
 
     /**
-     * Update ONLY the Master row of the authenticated user.
+     * Update ONLY the authenticated user's email.
      *
-     * The User model (name, email, password, role) is deliberately untouched:
-     * a master must not be able to rename himself or change his login email.
+     * Nothing else is written: the Master row (photo, bio, experience, rating,
+     * is_active) is admin-only, and so is the rest of the User row (name, phone,
+     * role, password). The form may still post those keys — validated() drops
+     * everything that is not in the rules, so an old client cannot smuggle them
+     * through.
      */
     public function update(UpdateMasterProfileRequest $request): RedirectResponse
     {
-        $master = $this->master($request);
+        // `master()` still runs first: it 403s a user whose profile row is gone,
+        // instead of leaving a half-usable account.
+        $this->master($request);
 
-        $data = $request->validated();
+        $user = $request->user();
+        $user->email = $request->validated('email');
+        $user->save();
 
-        // rating, is_active and user_id are not part of the profile form.
-        unset($data['photo'], $data['remove_photo']);
-
-        $previousPhoto = $master->photo;
-
-        $path = $this->storePhoto($request, $master->id);
-
-        /*
-         * Whether THIS request actually asks for a different photo. The flag
-         * cannot be derived later from `$data['photo'] ?? $previousPhoto`:
-         * `??` also falls through on an existing-but-null value, so the
-         * explicit «Удалить фото» branch (photo = null) would look unchanged
-         * and the old file would survive as an orphan. Same pattern as
-         * Admin\MasterController@update.
-         */
-        $photoChanged = false;
-
-        if ($path !== null) {
-            $data['photo'] = $path;
-            $photoChanged = true;
-        } elseif ($request->boolean('remove_photo')) {
-            $data['photo'] = null;
-            $photoChanged = true;
-        }
-
-        $master->update($data);
-
-        /*
-         * Drop the old file only when this save replaced it (a different path,
-         * so the old name is no longer referenced) or cleared it. A save that
-         * sends no photo input leaves the column and the file untouched.
-         */
-        if ($photoChanged && $previousPhoto !== null && $previousPhoto !== $path) {
-            Storage::disk('public')->delete($previousPhoto);
-        }
-
-        return back()->with('success', 'Профиль обновлён.');
+        return back()->with('success', 'Email обновлён.');
     }
 
     /**
@@ -98,31 +70,5 @@ class MasterProfileController extends Controller
         abort_if($master === null, 403, 'Профиль мастера не найден.');
 
         return $master;
-    }
-
-    /**
-     * Store the uploaded photo on the public disk, under masters/.
-     *
-     * Deterministic name keeps re-uploads from accumulating files, and the
-     * saved path equals the previous one when the extension does not change, so
-     * the old file is simply overwritten.
-     */
-    private function storePhoto(Request $request, int $masterId): ?string
-    {
-        if (! $request->hasFile('photo')) {
-            return null;
-        }
-
-        $file = $request->file('photo');
-
-        if ($file === null) {
-            return null;
-        }
-
-        return $file->storeAs(
-            'masters',
-            $masterId.'.'.strtolower($file->getClientOriginalExtension()),
-            ['disk' => 'public'],
-        );
     }
 }

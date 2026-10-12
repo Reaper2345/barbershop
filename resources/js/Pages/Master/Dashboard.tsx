@@ -209,17 +209,20 @@ export default function MasterDashboard({
             {/*
              * Profile nudge: only while the public card would show a
              * placeholder. A master with a photo sees nothing here.
+             *
+             * Informational, not a call to action: the photo (like the rest of
+             * the profile) is uploaded by an administrator, so pointing the
+             * master at /master/profile to "set" it led to a read-only page.
              */}
             {(photo === null || photo === '') && (
-                <Link
-                    href={routes.masterArea.profile}
-                    className="mb-8 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-bg-elevated px-5 py-4 text-sm transition-all duration-300 hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
+                <div className="mb-8 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-bg-elevated px-5 py-4 text-sm">
                     <span className="text-text-secondary">
                         На публичной странице ваша карточка пока без фотографии.
                     </span>
-                    <span className="font-medium text-accent">Установите фото профиля →</span>
-                </Link>
+                    <span className="font-medium text-text-primary">
+                        Фотографию загружает администратор.
+                    </span>
+                </div>
             )}
 
             {pending > 0 && (
