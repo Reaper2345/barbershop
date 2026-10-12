@@ -24,8 +24,15 @@ class ServiceController extends Controller
              * The list page opens create/edit in a modal, so each row must carry
              * its own master assignment: the update endpoint SYNCS master_ids,
              * and a modal opened without them would detach every master on save.
+             *
+             * Only the ACTIVE pivot rows are "assigned": syncMasters never
+             * deletes a row (a deselected master keeps his price overrides and
+             * is just flipped to is_active = false), so listing every pivot would
+             * show a deselected master as ticked again.
              */
-            ->with('masters:id')
+            ->with(['masters' => function ($query) {
+                $query->wherePivot('is_active', true)->select('masters.id');
+            }])
             ->withCount('masters')
             ->orderBy('category_id')
             ->orderBy('name')
