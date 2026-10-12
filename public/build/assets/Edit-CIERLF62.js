@@ -1,1 +1,0 @@
-import{j as t}from"./app-Boj9ORxj.js";import{A as o}from"./Create-BPejSqZ4.js";import"./nav-DRchs_1Q.js";import"./format-dhNRJIL1.js";import"./Button-BbuQusi0.js";import"./Input-DCEWiAD-.js";import"./panel-copy-R3pubHZQ.js";function d({category:r}){return t.jsx(o,{category:r})}export{d as default};

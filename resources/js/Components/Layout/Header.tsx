@@ -126,8 +126,17 @@ export function Header() {
                         </span>
                     </Link>
 
-                    {/* Desktop navigation */}
-                    <nav aria-label="Основная навигация" className="hidden lg:block">
+                    {/*
+                     * Desktop navigation.
+                     *
+                     * Starts at xl, not lg: the seven links are ~585px of
+                     * nowrap text, and with the 1280px container cap they did
+                     * not fit next to the logo and the action buttons between
+                     * 1024px and 1279px — the account menu was pushed outside
+                     * the container and the page scrolled sideways. Below xl
+                     * the burger opens the same links in the drawer.
+                     */}
+                    <nav aria-label="Основная навигация" className="hidden xl:block">
                         <ul className="flex items-center gap-1">
                             {primaryNav.map((item) => {
                                 const active = isNavActive(url, item);
@@ -163,11 +172,23 @@ export function Header() {
                     </nav>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-3">
+                        {/*
+                         * The number is intentionally not shown here.
+                         *
+                         * `container-page` caps the row at 1280px, and logo +
+                         * nav + "Записаться" + callback + account already need
+                         * ~1173px of it. Adding the number (~150px) squeezed
+                         * the row and wrapped the phone and the callback CTA
+                         * onto two or three lines. `hidden 2xl:flex` does not
+                         * help either, because the container stops growing at
+                         * 1280. The number stays available in the footer, on
+                         * /contacts and in the mobile drawer.
+                         */}
                         {phone !== null && (
                             <a
                                 href={telHref(phone)}
-                                className="hidden items-center gap-2 text-sm text-text-secondary transition-all duration-300 hover:text-accent xl:flex"
+                                className="hidden items-center gap-2 whitespace-nowrap text-sm text-text-secondary"
                             >
                                 <PhoneIcon className="h-4 w-4 shrink-0" />
                                 {phone}
@@ -178,20 +199,22 @@ export function Header() {
                             href={bookingHref}
                             variant="primary"
                             size="sm"
-                            className="hidden sm:inline-flex"
+                            className="hidden whitespace-nowrap sm:inline-flex"
                         >
                             Записаться
                         </Button>
 
                         {/*
                          * Callback CTA. It is a header action that opens the
-                         * modal — not a navigation link and not a sidebar item.
+                         * modal — not a navigation link, not a sidebar item and
+                         * not an entry in the account menu. `whitespace-nowrap`
+                         * keeps the label on one line if the row ever gets tight.
                          */}
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={openCallback}
-                            className="hidden sm:inline-flex"
+                            className="hidden whitespace-nowrap sm:inline-flex"
                         >
                             Заказать звонок
                         </Button>
@@ -251,19 +274,6 @@ export function Header() {
                                             </button>
                                         </>
                                     )}
-
-                                    <div className="my-1 border-t border-border" role="separator" />
-                                    <button
-                                        type="button"
-                                        role="menuitem"
-                                        onClick={() => {
-                                            setAccountOpen(false);
-                                            openCallback();
-                                        }}
-                                        className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-all duration-300 hover:bg-bg-secondary hover:text-accent"
-                                    >
-                                        Заказать звонок
-                                    </button>
                                 </div>
                             )}
                         </div>
@@ -274,7 +284,7 @@ export function Header() {
                             onClick={() => setMobileOpen(true)}
                             aria-label="Открыть меню"
                             aria-expanded={mobileOpen}
-                            className="rounded-full border border-border p-2.5 text-text-primary transition-all duration-300 hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+                            className="rounded-full border border-border p-2.5 text-text-primary transition-all duration-300 hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-accent xl:hidden"
                         >
                             <MenuIcon className="h-5 w-5" />
                         </button>
