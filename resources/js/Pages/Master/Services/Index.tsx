@@ -199,7 +199,7 @@ export default function MasterServices({ services = [] }: MasterServicesProps) {
                                             inherited={service.base_price_max}
                                         />
 
-                                        <td className="px-4 py-3 tabular-nums">
+                                        <td className="whitespace-nowrap px-4 py-3 tabular-nums">
                                             {service.duration_min === null ? (
                                                 <span className="text-text-secondary">
                                                     {formatDuration(service.base_duration_min)}
@@ -256,7 +256,7 @@ function OverrideCell({
 }) {
     if (value === null) {
         return (
-            <td className="px-4 py-3 tabular-nums">
+            <td className="whitespace-nowrap px-4 py-3 tabular-nums">
                 <span className="text-text-secondary">
                     {formatPriceRange(inherited, inherited)}
                     <span className="ml-1 text-xs">(из прайса)</span>
@@ -266,7 +266,7 @@ function OverrideCell({
     }
 
     return (
-        <td className="px-4 py-3 tabular-nums">
+        <td className="whitespace-nowrap px-4 py-3 tabular-nums">
             <span className="text-accent">{formatPriceRange(value, value)}</span>
         </td>
     );
@@ -300,12 +300,20 @@ function EditServiceForm({
     service: MasterServiceRow;
     onClose: () => void;
 }) {
-    // Initialised once per mount; the component is keyed by service id, so a
-    // different service always starts from its own values.
+    /*
+     * Initialised once per mount; the component is keyed by service id, so a
+     * different service always starts from its own values.
+     *
+     * A NULL override means "inherit the catalogue value", and starting the
+     * fields from '' made an inherited price look like a missing one — the
+     * master opened the modal and saw three empty boxes where the table shows
+     * numbers. The catalogue value is the fallback instead; the table keeps
+     * labelling inherited figures with «(из прайса)».
+     */
     const form = useForm<ServiceForm>({
-        price_min: service.price_min === null ? '' : String(service.price_min),
-        price_max: service.price_max === null ? '' : String(service.price_max),
-        duration_min: service.duration_min === null ? '' : String(service.duration_min),
+        price_min: String(service.price_min ?? service.base_price_min),
+        price_max: String(service.price_max ?? service.base_price_max),
+        duration_min: String(service.duration_min ?? service.base_duration_min),
         is_active: service.is_active,
     });
 

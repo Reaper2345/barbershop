@@ -239,20 +239,31 @@ function AppointmentQueueCard({
             </div>
 
             {/* Service + price state */}
-            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-                <span className="text-sm text-text-secondary">
-                    Услуга: <span className="text-text-primary">{appointment.service?.name ?? '—'}</span>
-                </span>
+            <div className="mt-5 border-t border-border pt-5">
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-text-secondary">
+                        Услуга: <span className="text-text-primary">{appointment.service?.name ?? '—'}</span>
+                    </span>
 
-                {price.kind === 'offer' && (
-                    <Badge tone="emerald">Подтверждено: {price.label}</Badge>
-                )}
+                    {price.kind === 'offer' && (
+                        <Badge tone="emerald">Подтверждено: {price.label}</Badge>
+                    )}
 
-                {price.kind === 'range' && <Badge tone="accent">Диапазон: {price.label}</Badge>}
+                    {price.kind === 'range' && <Badge tone="accent">Диапазон: {price.label}</Badge>}
 
-                {price.kind === 'pending' && (
-                    <Badge tone="neutral">Цена не указана</Badge>
-                )}
+                    {price.kind === 'pending' && (
+                        <Badge tone="neutral">Цена не указана</Badge>
+                    )}
+                </div>
+
+                {/* What the service actually is, so the master can prepare. */}
+                {appointment.service?.description !== null &&
+                    appointment.service?.description !== undefined &&
+                    appointment.service.description !== '' && (
+                        <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                            {appointment.service.description}
+                        </p>
+                    )}
             </div>
 
             {/* Client comment */}

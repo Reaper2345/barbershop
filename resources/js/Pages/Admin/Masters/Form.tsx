@@ -31,6 +31,14 @@ import type { AdminMasterRow } from '@/types';
 
 export interface AdminMasterFormProps {
     master?: AdminMasterRow | null;
+    /**
+     * Renders just the <form> — no AdminLayout, no page heading — so the same
+     * fields can live in the modal opened from /admin/masters. The standalone
+     * routes stay reachable and keep rendering the full page.
+     */
+    embedded?: boolean;
+    /** Called after a successful save and by the cancel control. */
+    onDone?: () => void;
 }
 
 interface CreateForm {
@@ -54,13 +62,17 @@ interface EditForm {
     remove_photo: boolean;
 }
 
-export default function AdminMasterForm({ master = null }: AdminMasterFormProps) {
+export default function AdminMasterForm({
+    master = null,
+    embedded = false,
+    onDone,
+}: AdminMasterFormProps) {
     const isEdit = master !== null;
 
     return isEdit ? (
-        <EditMasterForm master={master} />
+        <EditMasterForm master={master} embedded={embedded} onDone={onDone} />
     ) : (
-        <CreateMasterForm />
+        <CreateMasterForm embedded={embedded} onDone={onDone} />
     );
 }
 
@@ -68,7 +80,13 @@ export default function AdminMasterForm({ master = null }: AdminMasterFormProps)
 /* Create                                                              */
 /* ------------------------------------------------------------------ */
 
-function CreateMasterForm() {
+function CreateMasterForm({
+    embedded = false,
+    onDone,
+}: {
+    embedded?: boolean;
+    onDone?: () => void;
+}) {
     const form = useForm<CreateForm>({
         name: '',
         email: '',
@@ -113,25 +131,21 @@ function CreateMasterForm() {
             photo: data.photo,
         }));
 
-        form.post(routes.admin.masters);
+        form.post(routes.admin.masters, {
+            forceFormData: true,
+            onSuccess: () => onDone?.(),
+        });
     };
 
-    return (
-        <AdminLayout
-            title="Новый мастер"
-            subtitle="Создаётся учётная запись с ролью «Мастер» и профиль барбера."
-            nav={buildAdminNav()}
-            breadcrumbs={[
-                { label: 'Панель управления', href: routes.admin.dashboard },
-                { label: 'Мастера', href: routes.admin.masters },
-                { label: 'Создание' },
-            ]}
-        >
-            <Head title="Новый мастер" />
-
-            <form onSubmit={submit} className="max-w-3xl space-y-8" noValidate>
+    const body = (
+        <>
+            <form
+                onSubmit={submit}
+                className={cn('space-y-8', embedded ? 'w-full' : 'max-w-3xl')}
+                noValidate
+            >
                 {/* Account */}
-                <fieldset className="space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
+                <fieldset className="min-w-0 space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
                     <legend className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                         Учётная запись
                     </legend>
@@ -206,7 +220,7 @@ function CreateMasterForm() {
                 </fieldset>
 
                 {/* Profile */}
-                <fieldset className="space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
+                <fieldset className="min-w-0 space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
                     <legend className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                         Профиль барбера
                     </legend>
@@ -255,8 +269,29 @@ function CreateMasterForm() {
                     </p>
                 )}
 
-                <FormActions processing={form.processing} isEdit={false} />
+                <FormActions processing={form.processing} isEdit={false} onCancel={onDone} />
             </form>
+        </>
+    );
+
+    if (embedded) {
+        return body;
+    }
+
+    return (
+        <AdminLayout
+            title="Новый мастер"
+            subtitle="Создаётся учётная запись с ролью «Мастер» и профиль барбера."
+            nav={buildAdminNav()}
+            breadcrumbs={[
+                { label: 'Панель управления', href: routes.admin.dashboard },
+                { label: 'Мастера', href: routes.admin.masters },
+                { label: 'Создание' },
+            ]}
+        >
+            <Head title="Новый мастер" />
+
+            {body}
         </AdminLayout>
     );
 }
@@ -265,7 +300,15 @@ function CreateMasterForm() {
 /* Edit                                                                */
 /* ------------------------------------------------------------------ */
 
-function EditMasterForm({ master }: { master: AdminMasterRow }) {
+function EditMasterForm({
+    master,
+    embedded = false,
+    onDone,
+}: {
+    master: AdminMasterRow;
+    embedded?: boolean;
+    onDone?: () => void;
+}) {
     const form = useForm<EditForm>({
         bio: master.bio ?? '',
         experience_years: String(master.experience_years),
@@ -299,23 +342,17 @@ function EditMasterForm({ master }: { master: AdminMasterRow }) {
 
         form.post(routes.admin.master(master.id), {
             forceFormData: true,
+            onSuccess: () => onDone?.(),
         });
     };
 
-    return (
-        <AdminLayout
-            title={`Мастер: ${master.user?.name ?? ''}`}
-            subtitle="Профиль, опыт и фотография. Рейтинг рассчитывается по отзывам и не редактируется."
-            nav={buildAdminNav()}
-            breadcrumbs={[
-                { label: 'Панель управления', href: routes.admin.dashboard },
-                { label: 'Мастера', href: routes.admin.masters },
-                { label: 'Редактирование' },
-            ]}
-        >
-            <Head title="Профиль мастера" />
-
-            <form onSubmit={submit} className="max-w-3xl space-y-8" noValidate>
+    const body = (
+        <>
+            <form
+                onSubmit={submit}
+                className={cn('space-y-8', embedded ? 'w-full' : 'max-w-3xl')}
+                noValidate
+            >
                 {/* Linked account, read-only */}
                 <div className="rounded-2xl border border-border bg-bg-elevated p-6">
                     <p className="text-xs uppercase tracking-wider text-text-secondary">
@@ -331,7 +368,7 @@ function EditMasterForm({ master }: { master: AdminMasterRow }) {
                     </p>
                 </div>
 
-                <fieldset className="space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
+                <fieldset className="min-w-0 space-y-6 rounded-2xl border border-border bg-bg-elevated p-6">
                     <legend className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                         Профиль барбера
                     </legend>
@@ -447,8 +484,29 @@ function EditMasterForm({ master }: { master: AdminMasterRow }) {
                     </p>
                 )}
 
-                <FormActions processing={form.processing} isEdit />
+                <FormActions processing={form.processing} isEdit onCancel={onDone} />
             </form>
+        </>
+    );
+
+    if (embedded) {
+        return body;
+    }
+
+    return (
+        <AdminLayout
+            title={`Мастер: ${master.user?.name ?? ''}`}
+            subtitle="Профиль, опыт и фотография. Рейтинг рассчитывается по отзывам и не редактируется."
+            nav={buildAdminNav()}
+            breadcrumbs={[
+                { label: 'Панель управления', href: routes.admin.dashboard },
+                { label: 'Мастера', href: routes.admin.masters },
+                { label: 'Редактирование' },
+            ]}
+        >
+            <Head title="Профиль мастера" />
+
+            {body}
         </AdminLayout>
     );
 }
@@ -487,19 +545,34 @@ function ActiveToggle({
     );
 }
 
-function FormActions({ processing, isEdit }: { processing: boolean; isEdit: boolean }) {
+function FormActions({
+    processing,
+    isEdit,
+    onCancel,
+}: {
+    processing: boolean;
+    isEdit: boolean;
+    /** Present inside the modal: cancelling closes it instead of navigating. */
+    onCancel?: () => void;
+}) {
     return (
         <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" loading={processing} size="lg">
                 {isEdit ? PANEL.common.save : PANEL.common.create}
             </Button>
 
-            <Link
-                href={routes.admin.masters}
-                className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
-            >
-                {PANEL.common.back}
-            </Link>
+            {onCancel !== undefined ? (
+                <Button type="button" variant="ghost" onClick={onCancel}>
+                    {PANEL.common.cancel}
+                </Button>
+            ) : (
+                <Link
+                    href={routes.admin.masters}
+                    className="text-sm text-text-secondary transition-all duration-300 hover:text-accent"
+                >
+                    {PANEL.common.back}
+                </Link>
+            )}
         </div>
     );
 }

@@ -79,6 +79,9 @@ export default function AdminServicesIndex({
             key: 'name',
             header: 'Услуга',
             sortable: true,
+            // The name column takes the slack: with the default distribution it
+            // was ~180px and every title wrapped onto two or three lines.
+            className: 'min-w-[16rem]',
             accessor: (row) => row.name,
             render: (row) => (
                 <span>
@@ -157,6 +160,8 @@ export default function AdminServicesIndex({
             key: 'actions',
             header: PANEL.common.actions,
             align: 'right',
+            // Bounded so the two buttons stop eating a quarter of the table.
+            className: 'w-[13rem] whitespace-nowrap',
             render: (row) => (
                 <div className="flex items-center justify-end gap-2">
                     <Button href={routes.admin.serviceEdit(row.id)} variant="ghost" size="sm">

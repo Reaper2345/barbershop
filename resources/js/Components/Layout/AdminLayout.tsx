@@ -164,7 +164,10 @@ export function AdminLayout({
                 {/* Main column */}
                 <div className="flex min-w-0 flex-1 flex-col">
                     <header className="sticky top-0 z-30 border-b border-border bg-bg-primary/95 backdrop-blur">
-                        <div className="flex h-16 items-center gap-4 px-4 sm:px-6">
+                        {/* Same horizontal steps as <main>, so the breadcrumb
+                            lines up with the page heading instead of sitting
+                            8px to its left at lg and up. */}
+                        <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
                             <button
                                 type="button"
                                 onClick={() => setSidebarOpen(true)}

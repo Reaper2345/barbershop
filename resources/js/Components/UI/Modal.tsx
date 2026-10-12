@@ -125,10 +125,10 @@ export function Modal({
     }
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-6">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 animate-fade-in bg-black/80 backdrop-blur-sm"
+                className="fixed inset-0 animate-fade-in bg-black/80 backdrop-blur-sm"
                 onClick={onClose}
                 aria-hidden="true"
             />
@@ -141,7 +141,11 @@ export function Modal({
                 aria-describedby={description !== undefined ? descriptionId : undefined}
                 tabIndex={-1}
                 className={cn(
-                    'relative z-10 w-full animate-scale-in rounded-2xl border border-border bg-bg-elevated p-6 shadow-2xl shadow-black/60 sm:p-8',
+                    // `max-h` + the scrolling body below are what keep a tall
+                    // modal usable: without them the panel grew past the
+                    // viewport, `items-center` pushed its top (and the close
+                    // button) off-screen and the action row became unreachable.
+                    'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col animate-scale-in rounded-2xl border border-border bg-bg-elevated p-6 shadow-2xl shadow-black/60 sm:max-h-[calc(100dvh-3rem)] sm:p-8',
                     SIZES[size],
                 )}
             >
@@ -157,7 +161,7 @@ export function Modal({
                 )}
 
                 {(title !== undefined || description !== undefined) && (
-                    <header className="mb-6 pr-10">
+                    <header className="mb-6 shrink-0 pr-10">
                         {title !== undefined && (
                             <h2
                                 id={titleId}
@@ -175,9 +179,14 @@ export function Modal({
                     </header>
                 )}
 
-                <div>{children}</div>
+                {/* Only the body scrolls, so the title and the footer actions
+                    stay on screen in a tall modal. `min-h-0` is required for a
+                    flex child to be allowed to shrink. */}
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
 
-                {footer !== undefined && <div className="mt-8">{footer}</div>}
+                {footer !== undefined && (
+                    <div className="mt-8 shrink-0 border-t border-border pt-6">{footer}</div>
+                )}
             </div>
         </div>,
         document.body,

@@ -93,6 +93,8 @@ export interface MasterAppointmentRow {
     service?: {
         id: number;
         name: string;
+        /** Shown to the master so they know what the client booked. */
+        description?: string | null;
         duration_min: number;
         base_price_min: number | string;
         base_price_max: number | string;

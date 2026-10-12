@@ -120,7 +120,7 @@ export default function MasterDashboard({
             sortable: true,
             accessor: (row) => row.client?.name,
             render: (row) => (
-                <span>
+                <span className="block max-w-[16rem]">
                     <span className="block text-text-primary">{row.client?.name ?? '—'}</span>
                     {row.client?.phone !== null && row.client?.phone !== undefined && (
                         <a
@@ -130,6 +130,14 @@ export default function MasterDashboard({
                             {row.client.phone}
                         </a>
                     )}
+
+                    {/* What the client asked for — the master needs it before
+                        the visit, not after opening the detail modal. */}
+                    {row.client_comment !== null && row.client_comment !== '' && (
+                        <span className="mt-1 block text-xs italic leading-relaxed text-text-secondary">
+                            {row.client_comment}
+                        </span>
+                    )}
                 </span>
             ),
         },
@@ -138,7 +146,18 @@ export default function MasterDashboard({
             header: 'Услуга',
             sortable: true,
             accessor: (row) => row.service?.name,
-            render: (row) => row.service?.name ?? '—',
+            render: (row) => (
+                <span className="block max-w-[18rem]">
+                    <span className="block text-text-primary">{row.service?.name ?? '—'}</span>
+                    {row.service?.description !== null &&
+                        row.service?.description !== undefined &&
+                        row.service.description !== '' && (
+                            <span className="mt-1 block text-xs leading-relaxed text-text-secondary">
+                                {row.service.description}
+                            </span>
+                        )}
+                </span>
+            ),
         },
         {
             key: 'status',
@@ -168,10 +187,12 @@ export default function MasterDashboard({
             notificationCount={pending > 0 ? pending : undefined}
             actions={
                 <>
-                    <Button href={routes.masterArea.schedule} variant="ghost">
+                    {/* Compact: at 1024 the full-size pair wrapped onto a second
+                        line and doubled the greeting block's height. */}
+                    <Button href={routes.masterArea.schedule} variant="ghost" size="sm">
                         График работы
                     </Button>
-                    <Button href={routes.masterArea.appointments()} variant="ghost">
+                    <Button href={routes.masterArea.appointments()} variant="ghost" size="sm">
                         Все записи
                     </Button>
                 </>
@@ -198,20 +219,24 @@ export default function MasterDashboard({
             {pending > 0 && (
                 <div
                     role="alert"
-                    className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-accent/50 bg-accent/10 px-5 py-4"
+                    className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-accent/40 bg-accent/10 px-4 py-2 text-xs text-text-secondary"
                 >
-                    <AlertIcon className="h-5 w-5 shrink-0 text-accent" />
+                    <AlertIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
 
-                    <p className="min-w-0 flex-1 text-sm text-text-primary">
-                        <span className="font-medium">
+                    <p className="min-w-0 flex-1">
+                        <span className="font-medium text-text-primary">
                             {pending} {plural(pending, 'заявка ждёт', 'заявки ждут', 'заявок ждут')}
                         </span>{' '}
                         подтверждения. Клиенты не увидят стоимость, пока вы не подтвердите запись.
                     </p>
 
-                    <Button href={routes.masterArea.appointments('pending')} size="sm">
+                    {/* A text link, not a button: the strip must stay a strip. */}
+                    <Link
+                        href={routes.masterArea.appointments('pending')}
+                        className="shrink-0 font-medium text-accent underline underline-offset-2 transition-all duration-300 hover:text-accent-hover"
+                    >
                         Перейти к новым
-                    </Button>
+                    </Link>
                 </div>
             )}
 

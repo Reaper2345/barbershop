@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { AdminLayout } from '@/Components/Layout/AdminLayout';
 import { DataTable, type DataTableColumn } from '@/Components/Admin/DataTable';
 import { ConfirmDialog } from '@/Components/Admin/ConfirmDialog';
 import { Button } from '@/Components/UI/Button';
 import { Badge } from '@/Components/UI/Badge';
 import { Img } from '@/Components/UI/Img';
+import { Modal } from '@/Components/UI/Modal';
 import { RatingStars } from '@/Components/UI/RatingStars';
+import AdminMasterForm from './Form';
 import { buildAdminNav } from '@/lib/nav';
 import { routes } from '@/lib/routes';
 import { PANEL } from '@/lib/panel-copy';
@@ -21,6 +23,11 @@ import type { AdminMasterRow } from '@/types';
 | Deleting a master does NOT delete the user: Admin\MasterController@destroy
 | removes the profile and demotes the user back to `client`, so the copy in the
 | confirm dialog says exactly that.
+|
+| Create and edit both open in a modal over this list (the standalone
+| /admin/masters/create and /admin/masters/{id}/edit pages still work). The
+| form is shared: `embedded` drops the page chrome, and `onDone` closes the
+| modal — the controller's redirect refreshes the list behind it.
 */
 
 export interface AdminMastersIndexProps {
@@ -48,6 +55,8 @@ export default function AdminMastersIndex({
 }: AdminMastersIndexProps) {
     const [deleting, setDeleting] = useState<AdminMasterRow | null>(null);
     const [processing, setProcessing] = useState(false);
+    /** `'create'` opens an empty form; a row opens its own; null = closed. */
+    const [dialog, setDialog] = useState<'create' | AdminMasterRow | null>(null);
 
     const remove = (): void => {
         if (deleting === null) {
@@ -90,12 +99,13 @@ export default function AdminMastersIndex({
             accessor: (row) => row.user?.name,
             render: (row) => (
                 <span>
-                    <Link
-                        href={routes.admin.masterEdit(row.id)}
-                        className="block font-medium text-text-primary transition-all duration-300 hover:text-accent"
+                    <button
+                        type="button"
+                        onClick={() => setDialog(row)}
+                        className="block text-left font-medium text-text-primary transition-all duration-300 hover:text-accent"
                     >
                         {row.user?.name ?? '—'}
-                    </Link>
+                    </button>
                     <span className="text-xs text-text-secondary">{row.user?.email ?? ''}</span>
                 </span>
             ),
@@ -156,7 +166,7 @@ export default function AdminMastersIndex({
             align: 'right',
             render: (row) => (
                 <div className="flex items-center justify-end gap-2">
-                    <Button href={routes.admin.masterEdit(row.id)} variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => setDialog(row)}>
                         {PANEL.common.edit}
                     </Button>
 
@@ -182,7 +192,9 @@ export default function AdminMastersIndex({
                 { label: 'Панель управления', href: routes.admin.dashboard },
                 { label: 'Мастера' },
             ]}
-            actions={<Button href={routes.admin.mastersCreate}>{PANEL.common.create}</Button>}
+            actions={
+                <Button onClick={() => setDialog('create')}>{PANEL.common.create}</Button>
+            }
         >
             <Head title={PANEL.admin.mastersTitle} />
 
@@ -221,6 +233,35 @@ export default function AdminMastersIndex({
                 onConfirm={remove}
                 onClose={() => setDeleting(null)}
             />
+
+            {/*
+             * Create / edit in a modal. `key` forces a fresh form (and fresh
+             * useForm state) whenever a different master is opened.
+             */}
+            <Modal
+                open={dialog !== null}
+                onClose={() => setDialog(null)}
+                size="lg"
+                title={
+                    dialog === 'create' || dialog === null
+                        ? 'Новый мастер'
+                        : `Мастер: ${dialog.user?.name ?? ''}`
+                }
+                description={
+                    dialog === 'create' || dialog === null
+                        ? 'Создаётся учётная запись с ролью «Мастер» и профиль барбера.'
+                        : 'Профиль, опыт и фотография. Рейтинг рассчитывается по отзывам.'
+                }
+            >
+                {dialog !== null && (
+                    <AdminMasterForm
+                        key={dialog === 'create' ? 'create' : `edit-${dialog.id}`}
+                        master={dialog === 'create' ? null : dialog}
+                        embedded
+                        onDone={() => setDialog(null)}
+                    />
+                )}
+            </Modal>
         </AdminLayout>
     );
 }
