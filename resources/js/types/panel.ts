@@ -16,7 +16,7 @@ import type { AppointmentStatus, Category, ReviewLike, Role } from '@/types';
 export interface TimeOffRow {
     id: number;
     master_id: number;
-    /** `date` cast → "2025-03-12T00:00:00.000000Z". */
+    /** Plain "YYYY-MM-DD" — the controller formats it, so no timezone shift. */
     date: string;
     /** vacation | day_off | sick — see App\Models\TimeOff::TYPES. */
     type?: TimeOffType;

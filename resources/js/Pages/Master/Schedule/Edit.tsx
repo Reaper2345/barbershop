@@ -459,7 +459,7 @@ function TimeOffSection({ timeOff }: { timeOff: TimeOffRow[] }) {
                                             <span aria-hidden="true">{meta.emoji}</span>
                                             {meta.label}
                                             <span className="font-normal text-text-secondary">
-                                                {formatIsoDateLabel(entry.date.slice(0, 10), true)}
+                                                {formatIsoDateLabel(entry.date, true)}
                                             </span>
                                         </p>
 
@@ -655,7 +655,7 @@ function renderDeleteMessage(deleting: TimeOffRow | null): ReactNode {
         <>
             {typeMeta(deleting.type).label}{' '}
             <span className="text-text-primary">
-                {formatIsoDateLabel(deleting.date.slice(0, 10), true)}
+                {formatIsoDateLabel(deleting.date, true)}
             </span>{' '}
             перестанет блокировать запись: день снова станет рабочим, если он попадает в недельный
             график.

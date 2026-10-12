@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateScheduleRequest;
 use App\Models\Schedule;
+use App\Models\TimeOff;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,7 +43,23 @@ class ScheduleController extends Controller
 
         return Inertia::render('Master/Schedule', [
             'days' => $days,
-            'timeOff' => $master->timeOff()->upcoming()->get(),
+            /*
+             * `date` is sent as a plain Y-m-d string on purpose. The model's JSON
+             * form goes through Carbon's UTC serialization, so a date stored as
+             * 2026-10-13 00:00 in a UTC+5 app timezone became
+             * "2026-10-12T19:00:00.000000Z" — and the list, which only needs the
+             * calendar day, rendered the absence one day early.
+             */
+            'timeOff' => $master->timeOff()->upcoming()->get()
+                ->map(static fn (TimeOff $row): array => [
+                    'id' => $row->id,
+                    'master_id' => $row->master_id,
+                    'date' => $row->date->toDateString(),
+                    'type' => $row->type,
+                    'reason' => $row->reason,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ])
+                ->all(),
         ]);
     }
 
